@@ -32,6 +32,7 @@ export interface MosqueSettings {
   hadith_gap: number          // px gap between prayer table and hadith
   activity_image_width: number   // % width of image area (10-100)
   activity_image_height: number  // % height of image area (20-100)
+  activity_image_slide_duration: number // seconds per image in slideshow
 }
 
 export interface Activity {
@@ -127,4 +128,5 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
   hadith_gap: 16,
   activity_image_width: 100,
   activity_image_height: 75,
+  activity_image_slide_duration: 8,
 }

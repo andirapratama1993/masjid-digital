@@ -936,6 +936,7 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
   const [actTableDur, setActTableDur] = useState(String(settings.activity_table_duration))
   const [actDetailDur, setActDetailDur] = useState(String(settings.activity_detail_duration))
   const [financeDur, setFinanceDur] = useState(String(settings.finance_display_duration || 30))
+  const [slideDur, setSlideDur] = useState(String(settings.activity_image_slide_duration || 8))
   const [clockColor, setClockColor] = useState(settings.clock_color)
   const [prayerColor, setPrayerColor] = useState(settings.prayer_time_color)
   const [fsClock, setFsClock] = useState(String(settings.font_size_clock || 7))
@@ -948,6 +949,7 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
     setActTableDur(String(settings.activity_table_duration))
     setActDetailDur(String(settings.activity_detail_duration))
     setFinanceDur(String(settings.finance_display_duration || 30))
+    setSlideDur(String(settings.activity_image_slide_duration || 8))
     setClockColor(settings.clock_color)
     setPrayerColor(settings.prayer_time_color)
     setFsClock(String(settings.font_size_clock || 7))
@@ -962,6 +964,7 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
       activity_table_duration: Number(actTableDur),
       activity_detail_duration: Number(actDetailDur),
       finance_display_duration: Number(financeDur),
+      activity_image_slide_duration: Number(slideDur),
       clock_color: clockColor,
       prayer_time_color: prayerColor,
       font_size_clock: Number(fsClock),
@@ -1002,6 +1005,12 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
             <input type="number" min="5" max="300" value={financeDur}
               onChange={e => setFinanceDur(e.target.value)} className="settings-input" />
             <p className="text-xs text-gray-600 mt-1">Laporan keuangan</p>
+          </div>
+          <div>
+            <label className="settings-label">Durasi per Gambar Kegiatan</label>
+            <input type="number" min="3" max="60" value={slideDur}
+              onChange={e => setSlideDur(e.target.value)} className="settings-input" />
+            <p className="text-xs text-gray-600 mt-1">Detik tiap foto slideshow kegiatan</p>
           </div>
         </div>
       </SettingsCard>

@@ -119,6 +119,7 @@ export function parseSettingsFromDB(rows: { key: string; value: string | null }[
     hadith_gap: Number(map.hadith_gap ?? DEFAULT_SETTINGS.hadith_gap),
     activity_image_width: Number(map.activity_image_width ?? DEFAULT_SETTINGS.activity_image_width),
     activity_image_height: Number(map.activity_image_height ?? DEFAULT_SETTINGS.activity_image_height),
+    activity_image_slide_duration: Number(map.activity_image_slide_duration ?? DEFAULT_SETTINGS.activity_image_slide_duration),
   }
 }
 

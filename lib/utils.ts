@@ -116,6 +116,7 @@ export function parseSettingsFromDB(rows: { key: string; value: string | null }[
     font_size_clock: Number(map.font_size_clock ?? DEFAULT_SETTINGS.font_size_clock),
     font_size_prayer: Number(map.font_size_prayer ?? DEFAULT_SETTINGS.font_size_prayer),
     font_size_hadith: Number(map.font_size_hadith ?? DEFAULT_SETTINGS.font_size_hadith),
+    hadith_gap: Number(map.hadith_gap ?? DEFAULT_SETTINGS.hadith_gap),
   }
 }
 

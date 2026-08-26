@@ -857,6 +857,7 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
   const [fsClock, setFsClock] = useState(String(settings.font_size_clock || 7))
   const [fsPrayer, setFsPrayer] = useState(String(settings.font_size_prayer || 1.1))
   const [fsHadith, setFsHadith] = useState(String(settings.font_size_hadith || 0.95))
+  const [hadithGap, setHadithGap] = useState(String(settings.hadith_gap || 16))
 
   useEffect(() => {
     setDisplayDur(String(settings.display_duration))
@@ -868,6 +869,7 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
     setFsClock(String(settings.font_size_clock || 7))
     setFsPrayer(String(settings.font_size_prayer || 1.1))
     setFsHadith(String(settings.font_size_hadith || 0.95))
+    setHadithGap(String(settings.hadith_gap || 16))
   }, [settings])
 
   function handleSave() {
@@ -881,6 +883,7 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
       font_size_clock: Number(fsClock),
       font_size_prayer: Number(fsPrayer),
       font_size_hadith: Number(fsHadith),
+      hadith_gap: Number(hadithGap),
     })
   }
 
@@ -985,6 +988,18 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
             </div>
             <p className="text-xs text-gray-600 mt-1">Default: 0.95rem · Range: 0.6–1.8</p>
           </div>
+        </div>
+
+        {/* Hadith gap */}
+        <div className="mt-5 pt-5 border-t border-white/08">
+          <label className="settings-label">Jarak Waktu Sholat ke Hadith (px)</label>
+          <div className="flex items-center gap-3 mt-1 max-w-sm">
+            <input type="range" min="0" max="120" step="4" value={hadithGap}
+              onChange={e => setHadithGap(e.target.value)}
+              className="flex-1 accent-emerald-400" />
+            <span className="text-white text-sm font-mono w-12 text-right">{hadithGap}px</span>
+          </div>
+          <p className="text-xs text-gray-600 mt-1">Default: 16px · Geser ke kanan untuk memberi jarak lebih besar antara tabel waktu sholat dan hadith</p>
         </div>
       </SettingsCard>
 

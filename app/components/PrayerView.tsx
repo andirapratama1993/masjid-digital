@@ -483,8 +483,8 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
         </div>
       )}
 
-      {/* Spacer */}
-      <div className="flex-1 min-h-0" />
+      {/* Spacer — configurable gap between prayer table and hadith */}
+      <div style={{ height: `${settings.hadith_gap || 16}px`, flexShrink: 0 }} />
 
       {/* Hadith section — centered, spaced, strong contrast, uses font_size_hadith */}
       <div className="px-3 sm:px-6 pb-3 sm:pb-4">

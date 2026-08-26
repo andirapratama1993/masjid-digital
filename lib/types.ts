@@ -26,10 +26,12 @@ export interface MosqueSettings {
   hadith_duration: number
   sound_url: string
   straighten_duration: number
-  font_size_clock: number     // rem: 4–12
-  font_size_prayer: number    // rem: 1–3
-  font_size_hadith: number    // rem: 0.7–1.5
+  font_size_clock: number     // rem: 4-12
+  font_size_prayer: number    // rem: 1-3
+  font_size_hadith: number    // rem: 0.7-1.5
   hadith_gap: number          // px gap between prayer table and hadith
+  activity_image_width: number   // % width of image area (10-100)
+  activity_image_height: number  // % height of image area (20-100)
 }
 
 export interface Activity {
@@ -123,4 +125,6 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
   font_size_prayer: 1.1,
   font_size_hadith: 0.95,
   hadith_gap: 16,
+  activity_image_width: 100,
+  activity_image_height: 75,
 }

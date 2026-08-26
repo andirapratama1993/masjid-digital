@@ -165,7 +165,8 @@ export default function SettingsPage() {
             <PrayerTab settings={settings} onSave={saveSettings} saving={saving} />
           )}
           {activeTab === 'activities' && (
-            <ActivitiesTab activities={activities} setActivities={setActivities} showMessage={showMessage} />
+            <ActivitiesTab activities={activities} setActivities={setActivities}
+              showMessage={showMessage} settings={settings} onSave={saveSettings} saving={saving} />
           )}
           {activeTab === 'finances' && (
             <FinancesTab
@@ -443,13 +444,17 @@ function PrayerTab({ settings, onSave, saving }: { settings: MosqueSettings; onS
 // =============================================
 // Activities Tab
 // =============================================
-function ActivitiesTab({ activities, setActivities, showMessage }: {
+function ActivitiesTab({ activities, setActivities, showMessage, settings, onSave, saving }: {
   activities: Activity[]; setActivities: React.Dispatch<React.SetStateAction<Activity[]>>
   showMessage: (t: 'success' | 'error', msg: string) => void
+  settings: MosqueSettings; onSave: (u: Partial<MosqueSettings>) => void; saving: boolean
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [uploading, setUploading] = useState<string | null>(null)
+  const [imgWidth, setImgWidth] = useState(String(settings.activity_image_width || 100))
+  const [imgHeight, setImgHeight] = useState(String(settings.activity_image_height || 75))
+  const [previewUrl, setPreviewUrl] = useState('')
   const [form, setForm] = useState({
     day_of_week: 0, title: '', description: '', time_start: '',
     time_end: '', location: '', image_url: '', sort_order: 0
@@ -549,6 +554,85 @@ function ActivitiesTab({ activities, setActivities, showMessage }: {
           + Tambah Kegiatan
         </button>
       </div>
+
+      {/* Image size settings + live preview */}
+      <SettingsCard>
+        <h3 className="text-white font-semibold mb-1">Ukuran Tampilan Foto Kegiatan</h3>
+        <p className="text-gray-500 text-xs mb-4">Atur lebar dan tinggi foto saat tampil di layar utama. Preview menunjukkan hasil nyata.</p>
+        <div className="flex gap-6 items-start">
+          {/* Sliders */}
+          <div className="flex-1 space-y-4">
+            <div>
+              <label className="settings-label">Lebar Foto ({imgWidth}% layar)</label>
+              <input type="range" min="30" max="100" step="5" value={imgWidth}
+                onChange={e => setImgWidth(e.target.value)}
+                className="w-full accent-emerald-400 mt-1" />
+              <div className="flex justify-between text-xs text-gray-600 mt-0.5"><span>30%</span><span>100%</span></div>
+            </div>
+            <div>
+              <label className="settings-label">Tinggi Foto ({imgHeight}vh layar)</label>
+              <input type="range" min="20" max="90" step="5" value={imgHeight}
+                onChange={e => setImgHeight(e.target.value)}
+                className="w-full accent-emerald-400 mt-1" />
+              <div className="flex justify-between text-xs text-gray-600 mt-0.5"><span>20vh</span><span>90vh</span></div>
+            </div>
+            <div>
+              <label className="settings-label">URL Preview (opsional)</label>
+              <input value={previewUrl} onChange={e => setPreviewUrl(e.target.value)}
+                className="settings-input" placeholder="https://... atau kosongkan untuk preview placeholder" />
+              <p className="text-xs text-gray-600 mt-1">Paste URL foto kegiatan untuk preview langsung</p>
+            </div>
+            <SaveButton onClick={() => onSave({ activity_image_width: Number(imgWidth), activity_image_height: Number(imgHeight) })} saving={saving} label="Simpan Ukuran Foto" />
+          </div>
+
+          {/* Live preview */}
+          <div className="flex-shrink-0" style={{ width: '280px' }}>
+            <p className="settings-label mb-2">Preview Tampilan</p>
+            <div className="rounded-xl overflow-hidden border border-white/10 bg-black"
+              style={{ width: '280px' }}>
+              {/* Miniatur header */}
+              <div className="px-2 py-1.5 flex items-center justify-between border-b border-white/10"
+                style={{ background: 'rgba(0,0,0,0.6)' }}>
+                <span className="text-xs text-white font-medium">KEGIATAN MASJID</span>
+                <span className="text-xs text-gray-500">1/5</span>
+              </div>
+              {/* Image preview area */}
+              <div className="flex items-center justify-center bg-gray-900"
+                style={{ height: `${Math.round(Number(imgHeight) * 0.7)}px` }}>
+                <div className="relative overflow-hidden"
+                  style={{ width: `${imgWidth}%`, height: '100%' }}>
+                  {previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={previewUrl} alt="preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1"
+                      style={{ background: 'rgba(16,185,129,0.08)' }}>
+                      <span className="text-3xl opacity-20">&#128332;</span>
+                      <span className="text-xs text-gray-600">Foto Kegiatan</span>
+                    </div>
+                  )}
+                  {/* Gradient overlay */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%)', pointerEvents: 'none' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px 10px' }}>
+                    <p className="text-white text-xs font-bold">Kajian Ahad Pagi</p>
+                    <p className="text-emerald-400 text-xs">07:00 - 09:00</p>
+                  </div>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="px-2 py-1.5" style={{ background: 'rgba(0,0,0,0.6)' }}>
+                <div className="h-1 rounded-full bg-white/10">
+                  <div className="h-full w-1/5 rounded-full bg-emerald-400" />
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 mt-1.5 text-center">
+              Lebar: {imgWidth}% &nbsp;|&nbsp; Tinggi: {imgHeight}vh
+            </p>
+          </div>
+        </div>
+      </SettingsCard>
 
       {/* Add/Edit Form */}
       {showForm && (

@@ -117,6 +117,8 @@ export function parseSettingsFromDB(rows: { key: string; value: string | null }[
     font_size_prayer: Number(map.font_size_prayer ?? DEFAULT_SETTINGS.font_size_prayer),
     font_size_hadith: Number(map.font_size_hadith ?? DEFAULT_SETTINGS.font_size_hadith),
     hadith_gap: Number(map.hadith_gap ?? DEFAULT_SETTINGS.hadith_gap),
+    activity_image_width: Number(map.activity_image_width ?? DEFAULT_SETTINGS.activity_image_width),
+    activity_image_height: Number(map.activity_image_height ?? DEFAULT_SETTINGS.activity_image_height),
   }
 }
 

@@ -332,6 +332,42 @@ function PrayerTab({ settings, onSave, saving }: { settings: MosqueSettings; onS
           <SaveButton onClick={handleSave} saving={saving} />
         </div>
       </SettingsCard>
+
+      {/* Simulation Card */}
+      <SettingsCard>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-white font-semibold">Test Notifikasi & Tampilan</h3>
+            <p className="text-gray-500 text-sm mt-0.5">
+              Simulasikan setiap fase notifikasi — peringatan, countdown, azan, iqomah, dan luruskan shaf
+            </p>
+          </div>
+          <a href="/simulate" target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all"
+            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 0 15px rgba(245,158,11,0.3)' }}>
+            <span>▶</span> Buka Simulasi
+          </a>
+        </div>
+        <div className="grid grid-cols-3 gap-2 mt-4">
+          {[
+            { label: 'Peringatan 5 mnt', color: '#F59E0B', desc: 'Banner kuning sebelum azan' },
+            { label: 'Countdown 10 dtk', color: '#EF4444', desc: 'Hitungan mundur merah' },
+            { label: 'Notifikasi Azan', color: '#10B981', desc: 'Layar penuh waktu sholat tiba' },
+            { label: 'Iqomah', color: '#F59E0B', desc: 'Timer countdown iqomah' },
+            { label: 'Luruskan Shaf', color: '#10B981', desc: 'Tampilan setelah iqomah' },
+            { label: 'Semua Fase', color: '#6366F1', desc: 'Jalankan urutan lengkap' },
+          ].map(item => (
+            <div key={item.label} className="px-3 py-2 rounded-lg border border-white/08"
+              style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                <span className="text-xs font-medium text-white">{item.label}</span>
+              </div>
+              <p className="text-xs text-gray-500">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </SettingsCard>
     </div>
   )
 }

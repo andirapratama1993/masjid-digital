@@ -39,7 +39,7 @@ async function verifyTokenEdge(token: string): Promise<boolean> {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/settings')) {
+  if (pathname.startsWith('/settings') || pathname.startsWith('/simulate')) {
     const token = request.cookies.get('masjid_auth')?.value
     if (!token) {
       const loginUrl = new URL('/login', request.url)
@@ -67,5 +67,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/settings/:path*', '/login'],
+  matcher: ['/settings/:path*', '/simulate/:path*', '/simulate', '/login'],
 }

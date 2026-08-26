@@ -12,74 +12,167 @@ interface ActivityViewProps {
   hasImage?: boolean
 }
 
+// Each activity shows 2 sub-screens:
+// sub=0 → fullscreen image (or placeholder)
+// sub=1 → detail text (title, description, time, location)
+// Then advances to next activity
+
 export default function ActivityView({ settings, activities, isLight, hasImage }: ActivityViewProps) {
-  // State: 'table' shows weekly table, 'detail' shows one activity at a time
   const [mode, setMode] = useState<'table' | 'detail'>('table')
-  const [currentIndex, setCurrentIndex] = useState(0) // index in allActivities list
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [subScreen, setSubScreen] = useState<0 | 1>(0) // 0=image, 1=text
 
   const activeActivities = activities.filter(a => a.is_active)
   const tableDuration = (settings.activity_table_duration || 20) * 1000
   const detailDuration = (settings.activity_detail_duration || 10) * 1000
 
-  // Build flat list of all activities, ordered by day then sort_order
-  // Each entry will be shown full-screen one at a time
   const allActivities = [...activeActivities].sort((a, b) =>
-    a.day_of_week !== b.day_of_week
-      ? a.day_of_week - b.day_of_week
-      : a.sort_order - b.sort_order
+    a.day_of_week !== b.day_of_week ? a.day_of_week - b.day_of_week : a.sort_order - b.sort_order
   )
 
-  // Contrast tokens
   const t = (hasImage || (!isLight)) ? {
     border: 'rgba(255,255,255,0.15)', title: '#ffffff', sub: '#d1d5db',
-    row: 'rgba(0,0,0,0.40)', dot: 'rgba(255,255,255,0.25)', cardBg: 'rgba(0,0,0,0.50)',
-    headerBg: 'rgba(0,0,0,0.45)',
+    dot: 'rgba(255,255,255,0.25)', cardBg: 'rgba(0,0,0,0.60)', headerBg: 'rgba(0,0,0,0.55)',
+    tableBg: 'rgba(0,0,0,0.40)', tableRow: 'rgba(255,255,255,0.04)',
   } : {
     border: 'rgba(0,0,0,0.10)', title: '#111827', sub: '#6b7280',
-    row: 'rgba(255,255,255,0.75)', dot: 'rgba(0,0,0,0.20)', cardBg: 'rgba(255,255,255,0.85)',
-    headerBg: 'rgba(255,255,255,0.70)',
+    dot: 'rgba(0,0,0,0.20)', cardBg: 'rgba(255,255,255,0.92)', headerBg: 'rgba(255,255,255,0.85)',
+    tableBg: 'rgba(255,255,255,0.80)', tableRow: 'rgba(0,0,0,0.03)',
   }
 
-  // Timer: show table first, then cycle through each activity one by one
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>
 
     if (mode === 'table') {
       timeout = setTimeout(() => {
-        if (allActivities.length > 0) {
-          setMode('detail')
-          setCurrentIndex(0)
-        }
-        // If no activities, stay on table
+        if (allActivities.length > 0) { setMode('detail'); setCurrentIndex(0); setSubScreen(0) }
       }, tableDuration)
     } else {
-      // Detail mode: advance to next activity, or return to table after last
+      // Each sub-screen shows for detailDuration seconds
       timeout = setTimeout(() => {
-        if (currentIndex < allActivities.length - 1) {
-          setCurrentIndex(i => i + 1)
+        if (subScreen === 0) {
+          // Image shown → go to text detail
+          setSubScreen(1)
         } else {
-          // All activities shown, go back to table
-          setMode('table')
-          setCurrentIndex(0)
+          // Text shown → go to next activity or back to table
+          if (currentIndex < allActivities.length - 1) {
+            setCurrentIndex(i => i + 1)
+            setSubScreen(0)
+          } else {
+            setMode('table')
+            setCurrentIndex(0)
+            setSubScreen(0)
+          }
         }
       }, detailDuration)
     }
-
     return () => clearTimeout(timeout)
-  }, [mode, currentIndex, tableDuration, detailDuration, allActivities.length])
+  }, [mode, currentIndex, subScreen, tableDuration, detailDuration, allActivities.length])
 
-  // Group by day for the table view
   const byDay: Record<number, Activity[]> = {}
   for (let d = 0; d <= 6; d++) byDay[d] = activeActivities.filter(a => a.day_of_week === d)
 
   // =============================================
-  // DETAIL VIEW: one activity, full screen
+  // DETAIL VIEW
   // =============================================
   if (mode === 'detail' && allActivities.length > 0) {
     const activity = allActivities[currentIndex]
     const total = allActivities.length
     const position = currentIndex + 1
 
+    // Progress indicators
+    const progressBar = (
+      <div className="flex-shrink-0 px-4 sm:px-6 pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1 rounded-full overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.15)' }}>
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${(position / total) * 100}%`, background: '#10B981' }} />
+          </div>
+          <span className="text-xs flex-shrink-0" style={{ color: t.sub }}>
+            {position}/{total}
+          </span>
+          {/* Sub-screen indicator */}
+          <div className="flex gap-1 flex-shrink-0">
+            <div className="w-2 h-2 rounded-full transition-all"
+              style={{ background: subScreen === 0 ? '#F59E0B' : 'rgba(255,255,255,0.25)' }} />
+            <div className="w-2 h-2 rounded-full transition-all"
+              style={{ background: subScreen === 1 ? '#10B981' : 'rgba(255,255,255,0.25)' }} />
+          </div>
+        </div>
+      </div>
+    )
+
+    // --- SUB-SCREEN 0: FULLSCREEN IMAGE ---
+    if (subScreen === 0) {
+      return (
+        <div className="flex flex-col h-full animate-fade-in">
+          {/* Compact header */}
+          <div className="flex items-center justify-between px-3 sm:px-5 py-2 border-b flex-shrink-0"
+            style={{ borderColor: t.border, background: t.headerBg, backdropFilter: 'blur(8px)' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-400 text-sm">◆</span>
+              <span className="text-sm sm:text-base font-semibold" style={{ color: t.title }}>
+                KEGIATAN MASJID
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(16,185,129,0.2)', color: '#10B981' }}>
+                {DAY_NAMES[activity.day_of_week]}
+              </span>
+            </div>
+            <span className="text-xs" style={{ color: t.sub }}>Foto Kegiatan</span>
+          </div>
+
+          {/* FULL HEIGHT IMAGE */}
+          <div className="flex-1 relative overflow-hidden">
+            {activity.image_url ? (
+              <>
+                <Image
+                  src={activity.image_url}
+                  alt={activity.title}
+                  fill
+                  className="object-cover object-center"
+                  sizes="100vw"
+                  priority
+                />
+                {/* Gradient overlay at bottom for title readability */}
+                <div className="absolute inset-x-0 bottom-0 h-2/5"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)' }} />
+                {/* Title overlay at bottom */}
+                <div className="absolute inset-x-0 bottom-0 px-6 pb-4">
+                  <p className="text-white text-2xl sm:text-3xl lg:text-4xl font-bold drop-shadow-lg">{activity.title}</p>
+                  {activity.time_start && (
+                    <p className="text-emerald-400 text-sm sm:text-base font-medium mt-1">
+                      🕐 {activity.time_start}{activity.time_end ? ` – ${activity.time_end}` : ''}
+                      {activity.location ? ` · 📍 ${activity.location}` : ''}
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              /* No image — show stylized placeholder */
+              <div className="w-full h-full flex flex-col items-center justify-center gap-4"
+                style={{ background: hasImage ? 'rgba(0,0,0,0.4)' : isLight ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.06)' }}>
+                <div className="text-8xl sm:text-9xl opacity-15">🕌</div>
+                <div className="text-center">
+                  <p className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: t.title }}>{activity.title}</p>
+                  <p className="text-sm" style={{ color: t.sub }}>Belum ada foto untuk kegiatan ini</p>
+                  {activity.time_start && (
+                    <p className="text-emerald-400 text-base font-medium mt-2">
+                      🕐 {activity.time_start}{activity.time_end ? ` – ${activity.time_end}` : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {progressBar}
+        </div>
+      )
+    }
+
+    // --- SUB-SCREEN 1: DETAIL TEXT ---
     return (
       <div className="flex flex-col h-full animate-fade-in">
         {/* Compact header */}
@@ -87,60 +180,21 @@ export default function ActivityView({ settings, activities, isLight, hasImage }
           style={{ borderColor: t.border, background: t.headerBg, backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center gap-2">
             <span className="text-emerald-400 text-sm">◆</span>
-            <span className="text-sm sm:text-base font-semibold" style={{ color: t.title }}>
-              KEGIATAN MASJID
-            </span>
-            <span className="text-xs px-2 py-0.5 rounded-full ml-1"
+            <span className="text-sm sm:text-base font-semibold" style={{ color: t.title }}>KEGIATAN MASJID</span>
+            <span className="text-xs px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(16,185,129,0.2)', color: '#10B981' }}>
               {DAY_NAMES[activity.day_of_week]}
             </span>
           </div>
-          {/* Progress dots — one per activity */}
-          <div className="flex items-center gap-1.5">
-            {total <= 14 ? (
-              allActivities.map((_, i) => (
-                <div key={i}
-                  className="rounded-full transition-all duration-300"
-                  style={{
-                    width: i === currentIndex ? '20px' : '6px',
-                    height: '6px',
-                    background: i === currentIndex ? '#10B981' : t.dot,
-                  }} />
-              ))
-            ) : (
-              <span className="text-xs" style={{ color: t.sub }}>{position} / {total}</span>
-            )}
-          </div>
+          <span className="text-xs" style={{ color: t.sub }}>Detail Kegiatan</span>
         </div>
 
-        {/* Full-screen split: image left (50%) | detail right (50%) */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* LEFT: Full image */}
-          <div className="relative flex-shrink-0 bg-emerald-900/20" style={{ width: '50%' }}>
-            {activity.image_url ? (
-              <Image
-                src={activity.image_url}
-                alt={activity.title}
-                fill
-                className="object-cover"
-                sizes="50vw"
-                priority
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3"
-                style={{ background: hasImage ? 'rgba(0,0,0,0.3)' : isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)' }}>
-                <span className="text-6xl sm:text-8xl opacity-20">🕌</span>
-                <span className="text-sm" style={{ color: t.sub, opacity: 0.6 }}>Belum ada foto</span>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT: Details */}
-          <div className="flex-1 flex flex-col justify-center px-5 sm:px-8 lg:px-12 py-4 gap-3 sm:gap-4 overflow-hidden"
-            style={{ background: hasImage ? 'rgba(0,0,0,0.55)' : 'transparent', backdropFilter: hasImage ? 'blur(4px)' : 'none' }}>
-
+        {/* FULL HEIGHT DETAIL — centered content */}
+        <div className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-6"
+          style={{ background: hasImage ? 'rgba(0,0,0,0.55)' : 'transparent', backdropFilter: hasImage ? 'blur(4px)' : 'none' }}>
+          <div className="w-full max-w-3xl">
             {/* Day badge */}
-            <div>
+            <div className="flex items-center gap-2 mb-4">
               <span className="text-xs sm:text-sm px-3 py-1 rounded-full font-medium"
                 style={{ background: 'rgba(16,185,129,0.20)', color: '#10B981', border: '1px solid rgba(16,185,129,0.40)' }}>
                 📅 {DAY_NAMES[activity.day_of_week]}
@@ -148,58 +202,51 @@ export default function ActivityView({ settings, activities, isLight, hasImage }
             </div>
 
             {/* Title */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight"
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-4"
               style={{ color: t.title }}>
               {activity.title}
             </h2>
 
+            {/* Divider */}
+            <div className="h-0.5 w-16 mb-4 rounded-full" style={{ background: '#10B981' }} />
+
             {/* Description */}
             {activity.description && (
-              <p className="text-sm sm:text-base lg:text-lg leading-relaxed"
-                style={{ color: t.sub, maxHeight: '120px', overflow: 'hidden' }}>
+              <p className="text-base sm:text-lg lg:text-xl leading-relaxed mb-5"
+                style={{ color: t.sub }}>
                 {activity.description}
               </p>
             )}
 
             {/* Time & location */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {activity.time_start && (
-                <div className="flex items-center gap-2">
-                  <span className="text-emerald-400 text-lg sm:text-xl">🕐</span>
-                  <span className="text-base sm:text-lg lg:text-xl font-semibold text-emerald-400">
+                <div className="flex items-center gap-3">
+                  <span className="text-emerald-400 text-xl sm:text-2xl">🕐</span>
+                  <span className="text-lg sm:text-xl lg:text-2xl font-semibold text-emerald-400">
                     {activity.time_start}{activity.time_end ? ` – ${activity.time_end}` : ''}
                   </span>
                 </div>
               )}
               {activity.location && (
-                <div className="flex items-center gap-2">
-                  <span className="text-amber-400 text-lg sm:text-xl">📍</span>
-                  <span className="text-base sm:text-lg lg:text-xl font-semibold text-amber-400">
+                <div className="flex items-center gap-3">
+                  <span className="text-amber-400 text-xl sm:text-2xl">📍</span>
+                  <span className="text-lg sm:text-xl lg:text-2xl font-semibold text-amber-400">
                     {activity.location}
                   </span>
                 </div>
               )}
             </div>
-
-            {/* Progress bar */}
-            <div className="mt-2">
-              <div className="h-1 rounded-full overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.15)' }}>
-                <div className="h-full rounded-full transition-all duration-300"
-                  style={{ width: `${(position / total) * 100}%`, background: '#10B981' }} />
-              </div>
-              <p className="text-xs mt-1" style={{ color: t.sub, opacity: 0.7 }}>
-                {position} dari {total} kegiatan
-              </p>
-            </div>
           </div>
         </div>
+
+        {progressBar}
       </div>
     )
   }
 
   // =============================================
-  // TABLE VIEW — weekly schedule
+  // TABLE VIEW
   // =============================================
   return (
     <div className="flex flex-col h-full animate-fade-in">
@@ -210,9 +257,7 @@ export default function ActivityView({ settings, activities, isLight, hasImage }
           JADWAL KEGIATAN MASJID MINGGUAN
         </span>
         {allActivities.length > 0 && (
-          <span className="text-xs ml-auto" style={{ color: t.sub }}>
-            {allActivities.length} kegiatan
-          </span>
+          <span className="text-xs ml-auto" style={{ color: t.sub }}>{allActivities.length} kegiatan</span>
         )}
       </div>
       <div className="flex-1 overflow-auto px-2 sm:px-4 py-2 sm:py-3">

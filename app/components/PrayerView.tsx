@@ -38,9 +38,10 @@ interface PrayerViewProps {
   prayerTimes: PrayerTime | null
   isLight?: boolean
   hasImage?: boolean
+  onPrayerModeChange?: (active: boolean) => void
 }
 
-export default function PrayerView({ settings, prayerTimes, isLight, hasImage }: PrayerViewProps) {
+export default function PrayerView({ settings, prayerTimes, isLight, hasImage, onPrayerModeChange }: PrayerViewProps) {
   const [now, setNow] = useState(new Date())
   const [phase, setPhase] = useState<PrayerPhase>('normal')
   const [activePrayer, setActivePrayer] = useState<keyof PrayerTime | null>(null)
@@ -100,6 +101,7 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
     setCountdown(initialCountdown)
     setWarningPrayer(null)
     playSound()
+    onPrayerModeChange?.(true) // 🔒 lock display rotation
 
     let remaining = initialCountdown
 
@@ -111,7 +113,6 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
         clearPrayerInterval()
 
         if (phaseRef.current === 'pre_azan') {
-          // Transition to azan
           const azanDur = settings.azan_duration
           phaseRef.current = 'azan'
           setPhase('azan')
@@ -124,13 +125,12 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
             if (remaining <= 0) {
               clearPrayerInterval()
               if (!IQOMAH_PRAYERS.includes(prayer)) {
-                // Syuruk has no iqomah
                 phaseRef.current = 'normal'
                 setPhase('normal')
                 setActivePrayer(null)
+                onPrayerModeChange?.(false) // 🔓 unlock
                 return
               }
-              // Transition to iqomah
               const iqDur = settings.iqomah_duration
               phaseRef.current = 'iqomah'
               setPhase('iqomah')
@@ -140,11 +140,9 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
               intervalRef.current = setInterval(() => {
                 remaining -= 1
                 setCountdown(remaining)
-                // Beep at 10 seconds remaining during iqomah
                 if (remaining === 10) playSound()
                 if (remaining <= 0) {
                   clearPrayerInterval()
-                  // Show shaf message
                   const shafDur = settings.straighten_duration || 15
                   phaseRef.current = 'shaf'
                   setPhase('shaf')
@@ -154,6 +152,7 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
                     setPhase('normal')
                     setActivePrayer(null)
                     setCountdown(0)
+                    onPrayerModeChange?.(false) // 🔓 unlock after shaf
                   }, shafDur * 1000)
                 }
               }, 1000)
@@ -162,7 +161,7 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
         }
       }
     }, 1000)
-  }, [clearPrayerInterval, playSound, settings.azan_duration, settings.iqomah_duration, settings.straighten_duration])
+  }, [clearPrayerInterval, playSound, onPrayerModeChange, settings.azan_duration, settings.iqomah_duration, settings.straighten_duration])
 
   // =============================================
   // Main clock tick — checks prayer times
@@ -486,45 +485,60 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
       {/* Spacer — configurable gap between prayer table and hadith */}
       <div style={{ height: `${settings.hadith_gap || 16}px`, flexShrink: 0 }} />
 
-      {/* Hadith section — centered, spaced, strong contrast, uses font_size_hadith */}
+      {/* Hadith section — centered, Islamic ornamental border */}
       <div className="px-3 sm:px-6 pb-3 sm:pb-4">
-        <div key={hadithIndex}
-          className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border-l-4 border-amber-400 animate-fade-in"
+        <div key={hadithIndex} className="w-full animate-fade-in relative overflow-hidden"
           style={{
+            borderRadius: '16px',
             background: hasImage
-              ? 'rgba(0,0,0,0.65)'
+              ? 'rgba(0,0,0,0.72)'
               : isLight
-                ? 'rgba(0,0,0,0.08)'
-                : 'rgba(255,255,255,0.09)',
-            backdropFilter: 'blur(6px)',
-            borderRight: `1px solid ${isLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)'}`,
-            borderTop: `1px solid ${isLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)'}`,
-            borderBottom: `1px solid ${isLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)'}`,
+                ? 'rgba(255,255,255,0.92)'
+                : 'rgba(16,14,10,0.85)',
+            backdropFilter: 'blur(8px)',
+            border: `2px solid ${isLight ? 'rgba(180,140,60,0.4)' : 'rgba(245,158,11,0.45)'}`,
+            boxShadow: `0 0 24px rgba(245,158,11,0.15), inset 0 0 40px rgba(245,158,11,0.04)`,
           }}>
-          <div className="flex items-start gap-2 sm:gap-3">
-            <span className="text-amber-400 flex-shrink-0 mt-0.5"
-              style={{ fontSize: `${fsHadithRem * 1.2}rem` }}>
-              {isFriday ? '🕌' : '📖'}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="leading-relaxed font-medium"
-                style={{
-                  ...fsHadithStyle,
-                  color: hasImage ? '#ffffff' : isLight ? '#111827' : '#f3f4f6',
-                  textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-                }}>
-                {currentHadith.text}
-              </p>
-              <p className="mt-1.5 font-semibold tracking-wide"
-                style={{
-                  fontSize: `${fsHadithRem * 0.85}rem`,
-                  color: '#F59E0B',
-                  opacity: 0.95,
-                }}>
-                {currentHadith.source} &nbsp;·&nbsp; {currentHadith.topic}
-              </p>
+          {/* Top ornamental line */}
+          <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.6), rgba(245,158,11,0.9), rgba(245,158,11,0.6), transparent)' }} />
+
+          {/* Content */}
+          <div className="px-4 sm:px-6 py-3 sm:py-4 text-center">
+            {/* Islamic ornament top */}
+            <div className="flex items-center justify-center gap-2 mb-2 opacity-70">
+              <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.5))' }} />
+              <span style={{ color: '#F59E0B', fontSize: '0.9rem' }}>✦</span>
+              <span style={{ color: '#F59E0B', fontSize: '0.75rem' }}>{isFriday ? '🕌' : '📖'}</span>
+              <span style={{ color: '#F59E0B', fontSize: '0.9rem' }}>✦</span>
+              <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,0.5), transparent)' }} />
+            </div>
+
+            {/* Hadith text — centered */}
+            <p className="leading-relaxed font-medium text-center"
+              style={{
+                ...fsHadithStyle,
+                color: hasImage ? '#f9fafb' : isLight ? '#1f2937' : '#f3f4f6',
+                textShadow: hasImage ? '0 1px 4px rgba(0,0,0,0.9)' : 'none',
+              }}>
+              &ldquo;{currentHadith.text}&rdquo;
+            </p>
+
+            {/* Source & topic — centered */}
+            <p className="mt-2 font-semibold tracking-wide text-center"
+              style={{ fontSize: `${fsHadithRem * 0.82}rem`, color: '#F59E0B', opacity: 0.95 }}>
+              — {currentHadith.source} &nbsp;·&nbsp; {currentHadith.topic}
+            </p>
+
+            {/* Bottom ornament */}
+            <div className="flex items-center justify-center gap-2 mt-2 opacity-60">
+              <div className="h-px w-12" style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.5))' }} />
+              <span style={{ color: '#F59E0B', fontSize: '0.65rem' }}>◆ ◆ ◆</span>
+              <div className="h-px w-12" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,0.5), transparent)' }} />
             </div>
           </div>
+
+          {/* Bottom ornamental line */}
+          <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.6), rgba(245,158,11,0.9), rgba(245,158,11,0.6), transparent)' }} />
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { MosqueSettings, PrayerTime, Activity, DEFAULT_SETTINGS, BackgroundTheme } from '@/lib/types'
+import { MosqueSettings, PrayerTime, Activity, DEFAULT_SETTINGS } from '@/lib/types'
 import MosqueHeader from './MosqueHeader'
 import PrayerView from './PrayerView'
 import ActivityView from './ActivityView'
@@ -9,72 +9,74 @@ import FinanceView from './FinanceView'
 
 const TOTAL_VIEWS = 3
 
-// Background config per theme
-export const BG_CONFIG: Record<BackgroundTheme, {
-  style: React.CSSProperties
-  overlay: string
-  textClass: string
-}> = {
-  'dark': {
-    style: { background: '#0a0a0a' },
-    overlay: 'transparent',
-    textClass: 'text-white',
-  },
-  'light': {
-    style: { background: '#f8f9fa' },
-    overlay: 'transparent',
-    textClass: 'text-gray-900',
-  },
-  'masjidil-haram': {
-    style: {
-      backgroundImage: 'url(https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1920&q=80)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    },
-    overlay: 'rgba(0,0,0,0.72)',
-    textClass: 'text-white',
-  },
-  'masjid-nabawi': {
-    style: {
-      backgroundImage: 'url(https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=1920&q=80)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    },
-    overlay: 'rgba(0,0,0,0.70)',
-    textClass: 'text-white',
-  },
-  'masjidil-aqsa': {
-    style: {
-      backgroundImage: 'url(https://images.unsplash.com/photo-1552083375-1447ce886485?w=1920&q=80)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    },
-    overlay: 'rgba(0,0,0,0.68)',
-    textClass: 'text-white',
-  },
+// =============================================
+// Background style resolver
+// =============================================
+function getBgStyle(settings: MosqueSettings): {
+  containerStyle: React.CSSProperties
+  hasImage: boolean
+  isLight: boolean
+} {
+  const theme = settings.background_theme || 'dark'
+  const isLight = theme === 'light'
+
+  if (theme === 'dark') {
+    return {
+      containerStyle: { background: '#0d0d0d' },
+      hasImage: false,
+      isLight: false,
+    }
+  }
+
+  if (theme === 'light') {
+    return {
+      containerStyle: { background: '#f0f0f0' },
+      hasImage: false,
+      isLight: true,
+    }
+  }
+
+  // custom image
+  if (theme === 'custom' && settings.background_image_url) {
+    return {
+      containerStyle: {
+        backgroundImage: `url(${settings.background_image_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      },
+      hasImage: true,
+      isLight: false,
+    }
+  }
+
+  // fallback
+  return {
+    containerStyle: { background: '#0d0d0d' },
+    hasImage: false,
+    isLight: false,
+  }
 }
 
 export default function DisplayBoard() {
   const [currentView, setCurrentView] = useState(0)
   const [transitioning, setTransitioning] = useState(false)
-
   const [settings, setSettings] = useState<MosqueSettings>(DEFAULT_SETTINGS)
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
   const [financeData, setFinanceData] = useState(null)
 
-  // Load all data
   useEffect(() => {
     async function loadData() {
       try {
-        const [settingsRes, activitiesRes, financeRes] = await Promise.all([
+        const [sRes, aRes, fRes] = await Promise.all([
           fetch('/api/settings'),
           fetch('/api/activities'),
           fetch('/api/finances'),
         ])
-        if (settingsRes.ok) { const { data } = await settingsRes.json(); setSettings(data) }
-        if (activitiesRes.ok) { const { data } = await activitiesRes.json(); setActivities(data || []) }
-        if (financeRes.ok) { const { data } = await financeRes.json(); setFinanceData(data) }
+        if (sRes.ok) { const { data } = await sRes.json(); setSettings(data) }
+        if (aRes.ok) { const { data } = await aRes.json(); setActivities(data || []) }
+        if (fRes.ok) { const { data } = await fRes.json(); setFinanceData(data) }
       } catch (err) {
         console.error('Failed to load data:', err)
       }
@@ -84,7 +86,6 @@ export default function DisplayBoard() {
     return () => clearInterval(interval)
   }, [])
 
-  // Load prayer times when city changes
   useEffect(() => {
     async function loadPrayerTimes() {
       try {
@@ -98,12 +99,10 @@ export default function DisplayBoard() {
     const now = new Date()
     const midnight = new Date(now)
     midnight.setHours(24, 0, 5, 0)
-    const msToMidnight = midnight.getTime() - now.getTime()
-    const midnightTimer = setTimeout(loadPrayerTimes, msToMidnight)
+    const midnightTimer = setTimeout(loadPrayerTimes, midnight.getTime() - now.getTime())
     return () => clearTimeout(midnightTimer)
   }, [settings.city_id])
 
-  // View rotation
   const switchView = useCallback((next: number) => {
     setTransitioning(true)
     setTimeout(() => { setCurrentView(next); setTransitioning(false) }, 400)
@@ -111,55 +110,63 @@ export default function DisplayBoard() {
 
   useEffect(() => {
     const duration = (settings.display_duration || 30) * 1000
-    const timer = setTimeout(() => { switchView((currentView + 1) % TOTAL_VIEWS) }, duration)
+    const timer = setTimeout(() => switchView((currentView + 1) % TOTAL_VIEWS), duration)
     return () => clearTimeout(timer)
   }, [currentView, settings.display_duration, switchView])
 
-  const bg = BG_CONFIG[settings.background_theme || 'dark']
-  const isLight = settings.background_theme === 'light'
+  const { containerStyle, hasImage, isLight } = getBgStyle(settings)
+
+  // Contrast system:
+  // - dark bg  → white text, subtle dark glass cards
+  // - light bg → dark text, white glass cards
+  // - image bg → always white text, strong dark overlay + frosted glass cards
+  const overlayOpacity = hasImage ? 0.70 : 0
 
   return (
-    <div className="w-full min-h-screen flex flex-col relative overflow-hidden" style={bg.style}>
-      {/* Background overlay for image themes */}
-      {bg.overlay !== 'transparent' && (
-        <div className="absolute inset-0 pointer-events-none z-0" style={{ background: bg.overlay }} />
+    <div className="w-full min-h-screen flex flex-col relative overflow-hidden" style={containerStyle}>
+      {/* Dark overlay for custom image — ensures readability */}
+      {hasImage && (
+        <div className="absolute inset-0 pointer-events-none z-0"
+          style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
       )}
 
-      {/* Decorative top bar */}
+      {/* Subtle gradient overlay for depth on image backgrounds */}
+      {hasImage && (
+        <div className="absolute inset-0 pointer-events-none z-0"
+          style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.4) 100%)' }} />
+      )}
+
+      {/* Top accent bar */}
       <div className="relative z-10 h-1 w-full flex-shrink-0"
         style={{ background: 'linear-gradient(90deg, #10B981, #34D399, #F59E0B, #34D399, #10B981)' }} />
 
       {/* Header */}
       <div className="relative z-10 flex-shrink-0">
-        <MosqueHeader settings={settings} currentView={currentView} totalViews={TOTAL_VIEWS} isLight={isLight} />
+        <MosqueHeader settings={settings} currentView={currentView} totalViews={TOTAL_VIEWS}
+          isLight={isLight} hasImage={hasImage} />
       </div>
 
-      {/* Main content area */}
+      {/* Main content */}
       <main className="relative z-10 flex-1 overflow-hidden min-h-0">
-        {/* Decorative geometric corner elements */}
-        <div className="absolute top-0 left-0 w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 opacity-5 pointer-events-none">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <polygon points="50,5 95,25 95,75 50,95 5,75 5,25" fill="none" stroke="#10B981" strokeWidth="1"/>
-            <polygon points="50,15 85,30 85,70 50,85 15,70 15,30" fill="none" stroke="#10B981" strokeWidth="1"/>
-          </svg>
-        </div>
-        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 opacity-5 pointer-events-none rotate-90">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <polygon points="50,5 95,25 95,75 50,95 5,75 5,25" fill="none" stroke="#F59E0B" strokeWidth="1"/>
-          </svg>
-        </div>
-
-        {/* View content */}
         <div className={`h-full transition-opacity duration-400 ${transitioning ? 'opacity-0' : 'opacity-100'}`}>
-          {currentView === 0 && <PrayerView settings={settings} prayerTimes={prayerTimes} isLight={isLight} />}
-          {currentView === 1 && <ActivityView settings={settings} activities={activities} isLight={isLight} />}
-          {currentView === 2 && <FinanceView financeData={financeData} isLight={isLight} />}
+          {currentView === 0 && (
+            <PrayerView settings={settings} prayerTimes={prayerTimes}
+              isLight={isLight} hasImage={hasImage} />
+          )}
+          {currentView === 1 && (
+            <ActivityView settings={settings} activities={activities}
+              isLight={isLight} hasImage={hasImage} />
+          )}
+          {currentView === 2 && (
+            <FinanceView financeData={financeData}
+              isLight={isLight} hasImage={hasImage} />
+          )}
         </div>
       </main>
 
-      {/* Bottom progress bar */}
+      {/* Progress bar */}
       <div className="relative z-10 h-1 flex-shrink-0"
-        style={{ background: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.05)' }}>
+        style={{ background: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)' }}>
         <ProgressBar
           duration={(settings.display_duration || 30) * 1000}
           key={`${currentView}-${settings.display_duration}`}
@@ -167,8 +174,8 @@ export default function DisplayBoard() {
         />
       </div>
 
-      {/* Decorative bottom line */}
-      <div className="relative z-10 h-px w-full flex-shrink-0 opacity-40"
+      {/* Bottom accent line */}
+      <div className="relative z-10 h-px w-full flex-shrink-0 opacity-50"
         style={{ background: 'linear-gradient(90deg, transparent, #10B981, #F59E0B, #10B981, transparent)' }} />
     </div>
   )

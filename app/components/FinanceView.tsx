@@ -17,25 +17,16 @@ interface FinanceData {
 interface FinanceViewProps {
   financeData: FinanceData | null
   isLight?: boolean
+  hasImage?: boolean
 }
 
-export default function FinanceView({ financeData, isLight }: FinanceViewProps) {
-  const t = isLight ? {
-    border: 'rgba(0,0,0,0.08)',
-    title: '#111827',
-    sub: '#6b7280',
-    cardBg: 'rgba(0,0,0,0.04)',
-    rowBg: 'rgba(0,0,0,0.03)',
-    divider: 'rgba(0,0,0,0.08)',
-    amount: '#374151',
+export default function FinanceView({ financeData, isLight, hasImage }: FinanceViewProps) {
+  const t = (hasImage || (!isLight)) ? {
+    border: 'rgba(255,255,255,0.15)', title: '#ffffff', sub: '#d1d5db',
+    cardBg: 'rgba(0,0,0,0.40)', rowBg: 'rgba(0,0,0,0.35)', divider: 'rgba(255,255,255,0.15)', amount: '#f3f4f6',
   } : {
-    border: 'rgba(255,255,255,0.10)',
-    title: '#ffffff',
-    sub: '#9ca3af',
-    cardBg: 'rgba(255,255,255,0.04)',
-    rowBg: 'rgba(255,255,255,0.03)',
-    divider: 'rgba(255,255,255,0.10)',
-    amount: '#e5e7eb',
+    border: 'rgba(0,0,0,0.10)', title: '#111827', sub: '#6b7280',
+    cardBg: 'rgba(255,255,255,0.80)', rowBg: 'rgba(255,255,255,0.70)', divider: 'rgba(0,0,0,0.10)', amount: '#374151',
   }
 
   if (!financeData) {

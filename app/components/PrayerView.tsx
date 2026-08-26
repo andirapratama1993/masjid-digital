@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { MosqueSettings, PrayerTime } from '@/lib/types'
-import { secondsUntilPrayer, formatCountdown, pad2, getIndonesianDate } from '@/lib/utils'
+import { secondsUntilPrayer, formatCountdown, pad2, getIndonesianDate, getHijriDate } from '@/lib/utils'
 
 const PRAYER_KEYS: (keyof PrayerTime)[] = ['subuh', 'syuruk', 'dzuhur', 'ashar', 'maghrib', 'isya']
 const IQOMAH_PRAYERS: (keyof PrayerTime)[] = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya']
@@ -15,11 +15,12 @@ interface PrayerViewProps {
   settings: MosqueSettings
   prayerTimes: PrayerTime | null
   isLight?: boolean
+  hasImage?: boolean
 }
 
 type ClockPhase = 'normal' | 'warning' | 'countdown' | 'azan' | 'iqomah' | 'straighten'
 
-export default function PrayerView({ settings, prayerTimes, isLight }: PrayerViewProps) {
+export default function PrayerView({ settings, prayerTimes, isLight, hasImage }: PrayerViewProps) {
   const [now, setNow] = useState(new Date())
   const [phase, setPhase] = useState<ClockPhase>('normal')
   const [activePrayer, setActivePrayer] = useState<keyof PrayerTime | null>(null)
@@ -103,12 +104,16 @@ export default function PrayerView({ settings, prayerTimes, isLight }: PrayerVie
 
   const h = pad2(now.getHours()); const m = pad2(now.getMinutes()); const s = pad2(now.getSeconds())
   const dateStr = getIndonesianDate(now)
+  const hijriStr = getHijriDate(now)
   const clockColor = settings.clock_color || '#10B981'
   const prayerColor = settings.prayer_time_color || '#F59E0B'
 
-  // text colors based on theme
-  const textPrimary = isLight ? '#111827' : '#ffffff'
-  const textSub = isLight ? '#6b7280' : '#9ca3af'
+  // Contrast-aware text colors
+  // image bg → always white (overlay already darkens bg)
+  // dark bg  → white
+  // light bg → dark
+  const textPrimary = (hasImage || !isLight) ? '#ffffff' : '#111827'
+  const textSub = (hasImage || !isLight) ? '#d1d5db' : '#6b7280'
 
   const getNextPrayer = (): { key: keyof PrayerTime; label: string; time: string } | null => {
     if (!prayerTimes) return null
@@ -208,7 +213,7 @@ export default function PrayerView({ settings, prayerTimes, isLight }: PrayerVie
     const secsLeft = secondsUntilPrayer(prayerTimes[activePrayer], now)
     return (
       <div className="flex flex-col h-full gap-2 sm:gap-4 lg:gap-6">
-        <NormalClock h={h} m={m} s={s} dateStr={dateStr} clockColor={clockColor} compact textPrimary={textPrimary} textSub={textSub} />
+        <NormalClock h={h} m={m} s={s} dateStr={dateStr} hijriStr={hijriStr} clockColor={clockColor} compact textPrimary={textPrimary} textSub={textSub} />
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="flex flex-col items-center gap-2 sm:gap-3 lg:gap-4 px-5 sm:px-8 lg:px-10 py-4 sm:py-6 lg:py-7 rounded-xl sm:rounded-2xl border border-amber-400/60 animate-notification w-full max-w-lg text-center"
             style={{ background: 'rgba(245,158,11,0.1)', boxShadow: '0 0 30px rgba(245,158,11,0.3)' }}>
@@ -232,7 +237,7 @@ export default function PrayerView({ settings, prayerTimes, isLight }: PrayerVie
     const secsLeft = secondsUntilPrayer(prayerTimes[activePrayer], now)
     return (
       <div className="flex flex-col h-full gap-2 sm:gap-4 lg:gap-6">
-        <NormalClock h={h} m={m} s={s} dateStr={dateStr} clockColor={clockColor} compact textPrimary={textPrimary} textSub={textSub} />
+        <NormalClock h={h} m={m} s={s} dateStr={dateStr} hijriStr={hijriStr} clockColor={clockColor} compact textPrimary={textPrimary} textSub={textSub} />
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="flex flex-col items-center gap-2 sm:gap-3 lg:gap-4 px-5 sm:px-8 lg:px-10 py-4 sm:py-6 lg:py-7 rounded-xl sm:rounded-2xl border-2 animate-notification w-full max-w-lg text-center"
             style={{ borderColor: '#EF4444', background: 'rgba(239,68,68,0.1)', boxShadow: '0 0 40px rgba(239,68,68,0.5)' }}>
@@ -256,7 +261,7 @@ export default function PrayerView({ settings, prayerTimes, isLight }: PrayerVie
   // =============================================
   return (
     <div className="flex flex-col h-full gap-2 sm:gap-3 lg:gap-4 animate-fade-in">
-      <NormalClock h={h} m={m} s={s} dateStr={dateStr} clockColor={clockColor}
+      <NormalClock h={h} m={m} s={s} dateStr={dateStr} hijriStr={hijriStr} clockColor={clockColor}
         flipH={flipH} flipM={flipM} flipS={flipS} nextPrayer={nextPrayer}
         textPrimary={textPrimary} textSub={textSub} />
       {prayerTimes && <PrayerTimeTable prayerTimes={prayerTimes} now={now} prayerColor={prayerColor} isLight={isLight} />}
@@ -268,14 +273,14 @@ export default function PrayerView({ settings, prayerTimes, isLight }: PrayerVie
 // Normal Digital Clock — responsive
 // =============================================
 interface NormalClockProps {
-  h: string; m: string; s: string; dateStr: string; clockColor: string
+  h: string; m: string; s: string; dateStr: string; hijriStr?: string; clockColor: string
   compact?: boolean
   flipH?: boolean; flipM?: boolean; flipS?: boolean
   nextPrayer?: { key: keyof PrayerTime; label: string; time: string } | null
   textPrimary: string; textSub: string
 }
 
-function NormalClock({ h, m, s, dateStr, clockColor, compact, flipH, flipM, flipS, nextPrayer, textSub }: NormalClockProps) {
+function NormalClock({ h, m, s, dateStr, hijriStr, clockColor, compact, flipH, flipM, flipS, nextPrayer, textSub }: NormalClockProps) {
   const glow = `0 0 30px ${clockColor}60, 0 0 60px ${clockColor}20`
 
   return (
@@ -293,6 +298,11 @@ function NormalClock({ h, m, s, dateStr, clockColor, compact, flipH, flipM, flip
       )}
       <p className={`tracking-widest ${compact ? 'text-xs sm:text-sm' : 'text-xs sm:text-sm lg:text-base'}`}
         style={{ color: textSub }}>{dateStr}</p>
+      {!compact && hijriStr && (
+        <p className="text-xs sm:text-sm tracking-widest" style={{ color: '#F59E0B', opacity: 0.85 }}>
+          {hijriStr}
+        </p>
+      )}
       <div className={`flex items-center gap-1 sm:gap-2 font-mono font-bold
         ${compact
           ? 'text-3xl sm:text-4xl lg:text-5xl'

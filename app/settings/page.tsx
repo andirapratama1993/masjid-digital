@@ -886,59 +886,71 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
 // =============================================
 // Background Tab
 // =============================================
-const BG_OPTIONS: { id: BackgroundTheme; label: string; desc: string; preview: string }[] = [
-  { id: 'dark',           label: 'Hitam',          desc: 'Latar polos gelap',           preview: '#0a0a0a' },
-  { id: 'light',          label: 'Putih',           desc: 'Latar polos terang',          preview: '#f8f9fa' },
-  { id: 'masjidil-haram', label: 'Masjidil Haram',  desc: 'Masjid Haram, Makkah',        preview: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&q=60' },
-  { id: 'masjid-nabawi',  label: 'Masjid Nabawi',   desc: 'Masjid Nabawi, Madinah',      preview: 'https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=400&q=60' },
-  { id: 'masjidil-aqsa',  label: "Masjidil Aqsa",   desc: "Masjid Al-Aqsa, Palestina",   preview: 'https://images.unsplash.com/photo-1552083375-1447ce886485?w=400&q=60' },
-]
-
 function BackgroundTab({ settings, onSave, saving }: { settings: MosqueSettings; onSave: (u: Partial<MosqueSettings>) => void; saving: boolean }) {
   const [selected, setSelected] = useState<BackgroundTheme>(settings.background_theme || 'dark')
+  const [imageUrl, setImageUrl] = useState(settings.background_image_url || '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { setSelected(settings.background_theme || 'dark') }, [settings])
+  useEffect(() => {
+    setSelected(settings.background_theme || 'dark')
+    setImageUrl(settings.background_image_url || '')
+  }, [settings])
 
-  function handleSave() { onSave({ background_theme: selected }) }
+  async function handleImageUpload(file: File) {
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('bucket', 'mosque-assets')
+      fd.append('fileName', `bg-${Date.now()}`)
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (res.ok) {
+        setImageUrl(data.url)
+        setSelected('custom')
+      }
+    } catch { /* ignore */ }
+    finally { setUploading(false) }
+  }
+
+  function handleSave() {
+    onSave({ background_theme: selected, background_image_url: imageUrl })
+  }
+
+  const SOLID_OPTIONS: { id: BackgroundTheme; label: string; desc: string; bg: string; textColor: string }[] = [
+    { id: 'dark',  label: 'Hitam', desc: 'Latar gelap — cocok untuk TV / malam', bg: '#0d0d0d', textColor: '#ffffff' },
+    { id: 'light', label: 'Putih', desc: 'Latar terang — cocok untuk siang / proyektor', bg: '#f0f0f0', textColor: '#111827' },
+  ]
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <SectionTitle icon="🖼️" title="Background Tampilan" desc="Pilih latar belakang papan informasi" />
+      <SectionTitle icon="🖼️" title="Background Tampilan" desc="Pilih warna atau upload gambar latar belakang" />
+
+      {/* Solid color options */}
       <SettingsCard>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {BG_OPTIONS.map(opt => {
-            const isColor = opt.id === 'dark' || opt.id === 'light'
+        <h3 className="text-white font-semibold mb-4">Warna Polos</h3>
+        <div className="grid grid-cols-2 gap-4">
+          {SOLID_OPTIONS.map(opt => {
             const isSelected = selected === opt.id
             return (
               <button key={opt.id} onClick={() => setSelected(opt.id)}
                 className={`relative rounded-xl overflow-hidden border-2 transition-all duration-200 text-left
-                  ${isSelected ? 'border-emerald-400 scale-105' : 'border-white/10 hover:border-white/30'}`}
+                  ${isSelected ? 'border-emerald-400 scale-102' : 'border-white/10 hover:border-white/30'}`}
                 style={{ boxShadow: isSelected ? '0 0 20px rgba(16,185,129,0.4)' : 'none' }}>
-                {/* Preview */}
-                <div className="relative h-24 sm:h-28 lg:h-32 overflow-hidden"
-                  style={isColor ? { background: opt.preview } : undefined}>
-                  {!isColor && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={opt.preview} alt={opt.label}
-                      className="w-full h-full object-cover"
-                      loading="lazy" />
-                  )}
-                  {/* Overlay for image themes */}
-                  {!isColor && <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />}
-                  {/* Selected checkmark */}
+                {/* Color preview */}
+                <div className="h-20 sm:h-24 flex items-center justify-center relative" style={{ background: opt.bg }}>
+                  {/* Sample text to show contrast */}
+                  <div className="text-center">
+                    <p className="font-mono font-bold text-lg" style={{ color: opt.textColor }}>12:34</p>
+                    <p className="text-xs mt-0.5" style={{ color: opt.textColor, opacity: 0.7 }}>Masjid Al-Ikhlas</p>
+                  </div>
                   {isSelected && (
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-emerald-400 flex items-center justify-center">
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center">
                       <span className="text-black text-xs font-bold">✓</span>
                     </div>
                   )}
-                  {/* Label overlay for images */}
-                  {!isColor && (
-                    <div className="absolute bottom-0 left-0 right-0 px-2 pb-1">
-                      <p className="text-white font-semibold text-xs drop-shadow">{opt.label}</p>
-                    </div>
-                  )}
                 </div>
-                {/* Caption */}
                 <div className="px-3 py-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
                   <p className="text-xs font-semibold text-white">{opt.label}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
@@ -947,29 +959,82 @@ function BackgroundTab({ settings, onSave, saving }: { settings: MosqueSettings;
             )
           })}
         </div>
-        <div className="mt-5 flex items-center gap-4">
-          <SaveButton onClick={handleSave} saving={saving} label="Terapkan Background" />
-          <p className="text-xs text-gray-500">
-            Background saat ini: <span className="text-emerald-400">{BG_OPTIONS.find(o => o.id === selected)?.label}</span>
-          </p>
+      </SettingsCard>
+
+      {/* Custom image upload */}
+      <SettingsCard>
+        <h3 className="text-white font-semibold mb-1">Gambar Custom</h3>
+        <p className="text-gray-500 text-xs mb-4">Upload foto masjid atau gambar apapun sebagai background. Overlay gelap otomatis ditambahkan agar tulisan tetap terbaca.</p>
+
+        <div className="flex gap-4 items-start">
+          {/* Preview */}
+          <div className={`relative w-36 h-24 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all
+            ${selected === 'custom' ? 'border-emerald-400' : 'border-white/10'}`}>
+            {imageUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                {/* overlay preview */}
+                <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.65)' }} />
+                {/* contrast demo text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <p className="text-white font-mono font-bold text-sm drop-shadow">12:34</p>
+                  <p className="text-emerald-400 text-xs">SUBUH 04:30</p>
+                </div>
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-1"
+                style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <span className="text-2xl opacity-30">🖼️</span>
+                <p className="text-xs text-gray-600">Belum ada</p>
+              </div>
+            )}
+          </div>
+
+          {/* Controls */}
+          <div className="flex flex-col gap-2 flex-1">
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              className="px-4 py-2 rounded-lg text-sm border border-emerald-500/40 text-emerald-400
+                hover:bg-emerald-500/10 transition-colors disabled:opacity-50 text-left">
+              {uploading ? '⏳ Mengupload...' : '📁 Upload Gambar Background'}
+            </button>
+            {imageUrl && (
+              <button onClick={() => { setSelected('custom') }}
+                className={`px-4 py-2 rounded-lg text-sm border transition-colors text-left
+                  ${selected === 'custom'
+                    ? 'border-emerald-400 text-emerald-400 bg-emerald-500/10'
+                    : 'border-white/20 text-gray-400 hover:bg-white/05'}`}>
+                {selected === 'custom' ? '✓ Gambar ini aktif' : 'Gunakan gambar ini'}
+              </button>
+            )}
+            {imageUrl && (
+              <button onClick={() => { setImageUrl(''); if (selected === 'custom') setSelected('dark') }}
+                className="px-4 py-2 rounded-lg text-sm border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                Hapus Gambar
+              </button>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden"
+              onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 rounded-lg border border-emerald-500/20 text-xs text-gray-400 space-y-1"
+          style={{ background: 'rgba(16,185,129,0.05)' }}>
+          <p className="font-medium text-emerald-400">Tentang kontras tulisan:</p>
+          <p>• Background hitam/putih: tulisan otomatis menyesuaikan (putih untuk gelap, hitam untuk terang)</p>
+          <p>• Background gambar: overlay gelap 70% ditambahkan — semua tulisan putih dengan text shadow</p>
+          <p>• Pilih gambar yang tidak terlalu ramai agar tidak mengganggu keterbacaan informasi</p>
         </div>
       </SettingsCard>
 
-      {/* Preview note */}
-      <SettingsCard>
-        <div className="flex items-start gap-3">
-          <span className="text-amber-400 text-xl mt-0.5">💡</span>
-          <div>
-            <p className="text-white text-sm font-medium">Catatan Penggunaan Background Gambar</p>
-            <ul className="text-gray-500 text-xs mt-2 space-y-1 list-disc list-inside">
-              <li>Background gambar menggunakan foto dari Unsplash (membutuhkan koneksi internet)</li>
-              <li>Overlay gelap otomatis ditambahkan agar teks tetap terbaca</li>
-              <li>Background putih cocok untuk ruangan yang terang</li>
-              <li>Background hitam cocok untuk tampilan malam / layar TV</li>
-            </ul>
-          </div>
-        </div>
-      </SettingsCard>
+      <div className="flex items-center gap-4">
+        <SaveButton onClick={handleSave} saving={saving} label="Terapkan Background" />
+        <p className="text-xs text-gray-500">
+          Aktif: <span className="text-emerald-400">
+            {selected === 'dark' ? 'Hitam' : selected === 'light' ? 'Putih' : imageUrl ? 'Gambar Custom' : 'Belum dipilih'}
+          </span>
+        </p>
+      </div>
     </div>
   )
 }

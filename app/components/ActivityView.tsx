@@ -9,9 +9,10 @@ interface ActivityViewProps {
   settings: MosqueSettings
   activities: Activity[]
   isLight?: boolean
+  hasImage?: boolean
 }
 
-export default function ActivityView({ settings, activities, isLight }: ActivityViewProps) {
+export default function ActivityView({ settings, activities, isLight, hasImage }: ActivityViewProps) {
   const [showDetail, setShowDetail] = useState(false)
   const [currentDay, setCurrentDay] = useState(0)
   const activeActivities = activities.filter(a => a.is_active)
@@ -19,24 +20,16 @@ export default function ActivityView({ settings, activities, isLight }: Activity
   const tableDuration = (settings.activity_table_duration || 20) * 1000
   const detailDuration = (settings.activity_detail_duration || 10) * 1000
 
-  const t = isLight ? {
-    bg: 'transparent',
-    border: 'rgba(0,0,0,0.08)',
-    title: '#111827',
-    sub: '#6b7280',
-    row: 'rgba(0,0,0,0.03)',
-    rowHover: 'rgba(0,0,0,0.05)',
-    dot: 'rgba(0,0,0,0.15)',
-    cardBg: 'rgba(0,0,0,0.04)',
+  const t = (hasImage || (!isLight)) ? {
+    bg: 'transparent', border: 'rgba(255,255,255,0.15)',
+    title: '#ffffff', sub: '#d1d5db',
+    row: 'rgba(0,0,0,0.35)', rowHover: 'rgba(0,0,0,0.45)',
+    dot: 'rgba(255,255,255,0.25)', cardBg: 'rgba(0,0,0,0.40)',
   } : {
-    bg: 'transparent',
-    border: 'rgba(255,255,255,0.10)',
-    title: '#ffffff',
-    sub: '#9ca3af',
-    row: 'rgba(255,255,255,0.03)',
-    rowHover: 'rgba(255,255,255,0.05)',
-    dot: 'rgba(255,255,255,0.20)',
-    cardBg: 'rgba(255,255,255,0.05)',
+    bg: 'transparent', border: 'rgba(0,0,0,0.10)',
+    title: '#111827', sub: '#6b7280',
+    row: 'rgba(255,255,255,0.70)', rowHover: 'rgba(255,255,255,0.85)',
+    dot: 'rgba(0,0,0,0.20)', cardBg: 'rgba(255,255,255,0.80)',
   }
 
   useEffect(() => {

@@ -3,11 +3,9 @@
 // =============================================
 
 export type BackgroundTheme =
-  | 'dark'         // polos hitam
-  | 'light'        // polos putih
-  | 'masjidil-haram'
-  | 'masjid-nabawi'
-  | 'masjidil-aqsa'
+  | 'dark'    // polos hitam
+  | 'light'   // polos putih
+  | 'custom'  // gambar yang diupload
 
 export interface MosqueSettings {
   mosque_name: string
@@ -16,13 +14,14 @@ export interface MosqueSettings {
   city_name: string
   clock_color: string
   prayer_time_color: string
-  display_duration: number        // seconds per main view rotation
-  activity_table_duration: number // seconds to show activity table
-  activity_detail_duration: number // seconds per activity detail slide
-  azan_duration: number           // seconds to show azan notification
-  iqomah_duration: number         // seconds for iqomah countdown
-  prayer_notification_minutes: number // minutes before prayer to notify
+  display_duration: number
+  activity_table_duration: number
+  activity_detail_duration: number
+  azan_duration: number
+  iqomah_duration: number
+  prayer_notification_minutes: number
   background_theme: BackgroundTheme
+  background_image_url: string
 }
 
 export interface Activity {
@@ -107,4 +106,5 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
   iqomah_duration: 600,
   prayer_notification_minutes: 5,
   background_theme: 'dark',
+  background_image_url: '',
 }

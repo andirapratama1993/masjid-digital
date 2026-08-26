@@ -22,6 +22,9 @@ export interface MosqueSettings {
   prayer_notification_minutes: number
   background_theme: BackgroundTheme
   background_image_url: string
+  hadith_duration: number       // seconds per hadith rotation
+  sound_url: string             // custom notification sound URL
+  straighten_duration: number   // seconds to show "rapatkan shaf" screen
 }
 
 export interface Activity {
@@ -107,4 +110,7 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
   prayer_notification_minutes: 5,
   background_theme: 'dark',
   background_image_url: '',
+  hadith_duration: 30,
+  sound_url: '',
+  straighten_duration: 15,
 }

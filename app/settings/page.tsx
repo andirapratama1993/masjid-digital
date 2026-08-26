@@ -274,16 +274,39 @@ function PrayerTab({ settings, onSave, saving }: { settings: MosqueSettings; onS
   const [notifyMin, setNotifyMin] = useState(String(settings.prayer_notification_minutes))
   const [azanDur, setAzanDur] = useState(String(settings.azan_duration))
   const [iqomahDur, setIqomahDur] = useState(String(settings.iqomah_duration))
+  const [straightenDur, setStraightenDur] = useState(String(settings.straighten_duration || 15))
+  const [hadithDur, setHadithDur] = useState(String(settings.hadith_duration || 30))
+  const [soundUrl, setSoundUrl] = useState(settings.sound_url || '')
+  const [uploadingSound, setUploadingSound] = useState(false)
+  const soundFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setCityId(settings.city_id); setCityName(settings.city_name)
     setNotifyMin(String(settings.prayer_notification_minutes))
-    setAzanDur(String(settings.azan_duration)); setIqomahDur(String(settings.iqomah_duration))
+    setAzanDur(String(settings.azan_duration))
+    setIqomahDur(String(settings.iqomah_duration))
+    setStraightenDur(String(settings.straighten_duration || 15))
+    setHadithDur(String(settings.hadith_duration || 30))
+    setSoundUrl(settings.sound_url || '')
   }, [settings])
 
   function handleCityChange(id: string) {
     const city = INDONESIAN_CITIES.find(c => c.id === id)
     setCityId(id); setCityName(city?.lokasi || id)
+  }
+
+  async function handleSoundUpload(file: File) {
+    setUploadingSound(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('bucket', 'mosque-assets')
+      fd.append('fileName', `notification-sound-${Date.now()}`)
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (res.ok) setSoundUrl(data.url)
+    } catch { /* ignore */ }
+    finally { setUploadingSound(false) }
   }
 
   function handleSave() {
@@ -292,50 +315,110 @@ function PrayerTab({ settings, onSave, saving }: { settings: MosqueSettings; onS
       prayer_notification_minutes: Number(notifyMin),
       azan_duration: Number(azanDur),
       iqomah_duration: Number(iqomahDur),
+      straighten_duration: Number(straightenDur),
+      hadith_duration: Number(hadithDur),
+      sound_url: soundUrl,
     })
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <SectionTitle icon="🕌" title="Pengaturan Jadwal Sholat" desc="Lokasi dan notifikasi waktu sholat" />
+      <SectionTitle icon="🕌" title="Pengaturan Jadwal Sholat" desc="Lokasi, prayer mode, hadith, dan suara notifikasi" />
 
+      {/* Location */}
       <SettingsCard>
-        <div className="space-y-5">
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Kota / Lokasi Masjid</label>
-            <select value={cityId} onChange={e => handleCityChange(e.target.value)}
-              className="settings-input">
-              {INDONESIAN_CITIES.map(c => (
-                <option key={c.id} value={c.id}>{c.lokasi}</option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-600 mt-1">Waktu sholat disesuaikan dengan kota yang dipilih</p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Notifikasi (menit)</label>
-              <input type="number" min="1" max="30" value={notifyMin}
-                onChange={e => setNotifyMin(e.target.value)} className="settings-input" />
-              <p className="text-xs text-gray-600 mt-1">Menit sebelum azan muncul peringatan</p>
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Durasi Azan (detik)</label>
-              <input type="number" min="30" max="600" value={azanDur}
-                onChange={e => setAzanDur(e.target.value)} className="settings-input" />
-              <p className="text-xs text-gray-600 mt-1">Lama tampilan notifikasi azan</p>
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Durasi Iqomah (detik)</label>
-              <input type="number" min="60" max="1800" value={iqomahDur}
-                onChange={e => setIqomahDur(e.target.value)} className="settings-input" />
-              <p className="text-xs text-gray-600 mt-1">Hitungan mundur iqomah</p>
-            </div>
-          </div>
-
-          <SaveButton onClick={handleSave} saving={saving} />
+        <h3 className="text-white font-semibold mb-4">Lokasi Masjid</h3>
+        <div>
+          <label className="settings-label">Kota / Lokasi Masjid</label>
+          <select value={cityId} onChange={e => handleCityChange(e.target.value)} className="settings-input">
+            {INDONESIAN_CITIES.map(c => (
+              <option key={c.id} value={c.id}>{c.lokasi}</option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-600 mt-1">Waktu sholat disesuaikan dengan kota yang dipilih. Dzuhur hari Jumat otomatis menjadi Jum&apos;at.</p>
         </div>
       </SettingsCard>
+
+      {/* Prayer mode durations */}
+      <SettingsCard>
+        <h3 className="text-white font-semibold mb-4">Durasi Prayer Mode</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <label className="settings-label">Notifikasi (menit)</label>
+            <input type="number" min="1" max="30" value={notifyMin}
+              onChange={e => setNotifyMin(e.target.value)} className="settings-input" />
+            <p className="text-xs text-gray-600 mt-1">Banner peringatan sebelum azan</p>
+          </div>
+          <div>
+            <label className="settings-label">Durasi Azan (detik)</label>
+            <input type="number" min="30" max="600" value={azanDur}
+              onChange={e => setAzanDur(e.target.value)} className="settings-input" />
+            <p className="text-xs text-gray-600 mt-1">Lama layar azan berkumandang</p>
+          </div>
+          <div>
+            <label className="settings-label">Durasi Iqomah (detik)</label>
+            <input type="number" min="30" max="1800" value={iqomahDur}
+              onChange={e => setIqomahDur(e.target.value)} className="settings-input" />
+            <p className="text-xs text-gray-600 mt-1">Hitungan mundur iqomah</p>
+          </div>
+          <div>
+            <label className="settings-label">Tampil Shaf (detik)</label>
+            <input type="number" min="5" max="60" value={straightenDur}
+              onChange={e => setStraightenDur(e.target.value)} className="settings-input" />
+            <p className="text-xs text-gray-600 mt-1">Lama pesan &quot;rapatkan shaf&quot;</p>
+          </div>
+        </div>
+        <div className="mt-4 p-3 rounded-lg border border-emerald-500/20 text-xs text-gray-400"
+          style={{ background: 'rgba(16,185,129,0.05)' }}>
+          <p className="font-medium text-emerald-400 mb-1">Alur Prayer Mode:</p>
+          <p>10 detik sebelum azan → countdown → azan berkumandang ({azanDur}s) → iqomah ({iqomahDur}s) → rapatkan shaf ({straightenDur}s) → kembali normal</p>
+        </div>
+      </SettingsCard>
+
+      {/* Hadith settings */}
+      <SettingsCard>
+        <h3 className="text-white font-semibold mb-4">Hadith Keutamaan Sholat</h3>
+        <div className="max-w-xs">
+          <label className="settings-label">Durasi Tiap Hadith (detik)</label>
+          <input type="number" min="10" max="120" value={hadithDur}
+            onChange={e => setHadithDur(e.target.value)} className="settings-input" />
+          <p className="text-xs text-gray-600 mt-1">Hadith bergantian setiap {hadithDur} detik. Hari Jumat otomatis tampilkan hadith tentang keutamaan hari Jumat.</p>
+        </div>
+      </SettingsCard>
+
+      {/* Sound notification */}
+      <SettingsCard>
+        <h3 className="text-white font-semibold mb-1">Suara Notifikasi</h3>
+        <p className="text-gray-500 text-xs mb-4">
+          Upload file audio (MP3/WAV/OGG) untuk suara notifikasi saat countdown, azan, dan iqomah.
+          Jika tidak diupload, akan menggunakan suara beep bawaan.
+        </p>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-2">
+            <button onClick={() => soundFileRef.current?.click()} disabled={uploadingSound}
+              className="px-4 py-2 rounded-lg text-sm border border-emerald-500/40 text-emerald-400
+                hover:bg-emerald-500/10 transition-colors disabled:opacity-50">
+              {uploadingSound ? '⏳ Mengupload...' : '🔊 Upload Suara Notifikasi'}
+            </button>
+            {soundUrl && (
+              <div className="flex items-center gap-2">
+                <audio controls src={soundUrl} className="h-8 max-w-48" />
+                <button onClick={() => setSoundUrl('')}
+                  className="px-3 py-1 text-xs rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10">
+                  Hapus
+                </button>
+              </div>
+            )}
+            {!soundUrl && (
+              <p className="text-xs text-gray-600">Saat ini menggunakan suara beep bawaan</p>
+            )}
+          </div>
+          <input ref={soundFileRef} type="file" accept="audio/*" className="hidden"
+            onChange={e => e.target.files?.[0] && handleSoundUpload(e.target.files[0])} />
+        </div>
+      </SettingsCard>
+
+      <SaveButton onClick={handleSave} saving={saving} />
 
       {/* Simulation Card */}
       <SettingsCard>
@@ -343,7 +426,7 @@ function PrayerTab({ settings, onSave, saving }: { settings: MosqueSettings; onS
           <div>
             <h3 className="text-white font-semibold">Test Notifikasi & Tampilan</h3>
             <p className="text-gray-500 text-sm mt-0.5">
-              Simulasikan setiap fase notifikasi — peringatan, countdown, azan, iqomah, dan luruskan shaf
+              Simulasikan setiap fase notifikasi — countdown, azan, iqomah, dan rapatkan shaf
             </p>
           </div>
           <a href="/simulate" target="_blank" rel="noopener noreferrer"
@@ -351,25 +434,6 @@ function PrayerTab({ settings, onSave, saving }: { settings: MosqueSettings; onS
             style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 0 15px rgba(245,158,11,0.3)' }}>
             <span>▶</span> Buka Simulasi
           </a>
-        </div>
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          {[
-            { label: 'Peringatan 5 mnt', color: '#F59E0B', desc: 'Banner kuning sebelum azan' },
-            { label: 'Countdown 10 dtk', color: '#EF4444', desc: 'Hitungan mundur merah' },
-            { label: 'Notifikasi Azan', color: '#10B981', desc: 'Layar penuh waktu sholat tiba' },
-            { label: 'Iqomah', color: '#F59E0B', desc: 'Timer countdown iqomah' },
-            { label: 'Luruskan Shaf', color: '#10B981', desc: 'Tampilan setelah iqomah' },
-            { label: 'Semua Fase', color: '#6366F1', desc: 'Jalankan urutan lengkap' },
-          ].map(item => (
-            <div key={item.label} className="px-3 py-2 rounded-lg border border-white/08"
-              style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                <span className="text-xs font-medium text-white">{item.label}</span>
-              </div>
-              <p className="text-xs text-gray-500">{item.desc}</p>
-            </div>
-          ))}
         </div>
       </SettingsCard>
     </div>

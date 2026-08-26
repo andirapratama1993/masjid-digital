@@ -109,6 +109,9 @@ export function parseSettingsFromDB(rows: { key: string; value: string | null }[
     prayer_notification_minutes: Number(map.prayer_notification_minutes ?? DEFAULT_SETTINGS.prayer_notification_minutes),
     background_theme: (map.background_theme as import('./types').BackgroundTheme) ?? DEFAULT_SETTINGS.background_theme,
     background_image_url: map.background_image_url ?? DEFAULT_SETTINGS.background_image_url,
+    hadith_duration: Number(map.hadith_duration ?? DEFAULT_SETTINGS.hadith_duration),
+    sound_url: map.sound_url ?? DEFAULT_SETTINGS.sound_url,
+    straighten_duration: Number(map.straighten_duration ?? DEFAULT_SETTINGS.straighten_duration),
   }
 }
 

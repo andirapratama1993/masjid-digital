@@ -851,15 +851,23 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
   const [displayDur, setDisplayDur] = useState(String(settings.display_duration))
   const [actTableDur, setActTableDur] = useState(String(settings.activity_table_duration))
   const [actDetailDur, setActDetailDur] = useState(String(settings.activity_detail_duration))
+  const [financeDur, setFinanceDur] = useState(String(settings.finance_display_duration || 30))
   const [clockColor, setClockColor] = useState(settings.clock_color)
   const [prayerColor, setPrayerColor] = useState(settings.prayer_time_color)
+  const [fsClock, setFsClock] = useState(String(settings.font_size_clock || 7))
+  const [fsPrayer, setFsPrayer] = useState(String(settings.font_size_prayer || 1.1))
+  const [fsHadith, setFsHadith] = useState(String(settings.font_size_hadith || 0.95))
 
   useEffect(() => {
     setDisplayDur(String(settings.display_duration))
     setActTableDur(String(settings.activity_table_duration))
     setActDetailDur(String(settings.activity_detail_duration))
+    setFinanceDur(String(settings.finance_display_duration || 30))
     setClockColor(settings.clock_color)
     setPrayerColor(settings.prayer_time_color)
+    setFsClock(String(settings.font_size_clock || 7))
+    setFsPrayer(String(settings.font_size_prayer || 1.1))
+    setFsHadith(String(settings.font_size_hadith || 0.95))
   }, [settings])
 
   function handleSave() {
@@ -867,39 +875,120 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
       display_duration: Number(displayDur),
       activity_table_duration: Number(actTableDur),
       activity_detail_duration: Number(actDetailDur),
+      finance_display_duration: Number(financeDur),
       clock_color: clockColor,
       prayer_time_color: prayerColor,
+      font_size_clock: Number(fsClock),
+      font_size_prayer: Number(fsPrayer),
+      font_size_hadith: Number(fsHadith),
     })
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <SectionTitle icon="🖥️" title="Pengaturan Tampilan" desc="Durasi tampilan dan warna" />
+      <SectionTitle icon="🖥️" title="Pengaturan Tampilan" desc="Durasi, warna, dan ukuran font" />
 
+      {/* Durations */}
       <SettingsCard>
         <h3 className="text-white font-semibold mb-4">Durasi Tampilan (detik)</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <label className="settings-label">Rotasi Tampilan Utama</label>
+            <label className="settings-label">Rotasi Utama</label>
             <input type="number" min="5" max="300" value={displayDur}
               onChange={e => setDisplayDur(e.target.value)} className="settings-input" />
-            <p className="text-xs text-gray-600 mt-1">Durasi tiap tampilan (Sholat/Kegiatan/Kas)</p>
+            <p className="text-xs text-gray-600 mt-1">Sholat / Kegiatan / Kas</p>
           </div>
           <div>
             <label className="settings-label">Tabel Kegiatan</label>
             <input type="number" min="5" max="120" value={actTableDur}
               onChange={e => setActTableDur(e.target.value)} className="settings-input" />
-            <p className="text-xs text-gray-600 mt-1">Durasi tampilan tabel mingguan</p>
+            <p className="text-xs text-gray-600 mt-1">Tabel mingguan</p>
           </div>
           <div>
-            <label className="settings-label">Detail Kegiatan Per Hari</label>
+            <label className="settings-label">Detail Kegiatan</label>
             <input type="number" min="3" max="60" value={actDetailDur}
               onChange={e => setActDetailDur(e.target.value)} className="settings-input" />
-            <p className="text-xs text-gray-600 mt-1">Durasi detail tiap hari</p>
+            <p className="text-xs text-gray-600 mt-1">Per hari kegiatan</p>
+          </div>
+          <div>
+            <label className="settings-label">Tampilan Kas</label>
+            <input type="number" min="5" max="300" value={financeDur}
+              onChange={e => setFinanceDur(e.target.value)} className="settings-input" />
+            <p className="text-xs text-gray-600 mt-1">Laporan keuangan</p>
           </div>
         </div>
       </SettingsCard>
 
+      {/* Font sizes */}
+      <SettingsCard>
+        <h3 className="text-white font-semibold mb-1">Ukuran Font</h3>
+        <p className="text-gray-500 text-xs mb-4">Semua nilai dalam satuan rem (1rem = 16px)</p>
+        <div className="grid grid-cols-3 gap-6">
+          {/* Clock font size */}
+          <div>
+            <label className="settings-label">Ukuran Jam Digital (rem)</label>
+            <div className="flex items-center gap-3 mt-1">
+              <input type="range" min="3" max="12" step="0.5" value={fsClock}
+                onChange={e => setFsClock(e.target.value)}
+                className="flex-1 accent-emerald-400" />
+              <span className="text-white text-sm font-mono w-8 text-right">{fsClock}</span>
+            </div>
+            <div className="mt-2 p-3 rounded-xl border border-white/10 text-center"
+              style={{ background: 'rgba(0,0,0,0.5)' }}>
+              <span className="font-mono font-bold"
+                style={{ fontSize: `${Math.min(Number(fsClock), 5)}rem`, color: clockColor, textShadow: `0 0 20px ${clockColor}60` }}>
+                12:34
+              </span>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Default: 7rem · Range: 3–12</p>
+          </div>
+          {/* Prayer time font size */}
+          <div>
+            <label className="settings-label">Ukuran Waktu Sholat (rem)</label>
+            <div className="flex items-center gap-3 mt-1">
+              <input type="range" min="0.7" max="2.5" step="0.05" value={fsPrayer}
+                onChange={e => setFsPrayer(e.target.value)}
+                className="flex-1 accent-emerald-400" />
+              <span className="text-white text-sm font-mono w-8 text-right">{Number(fsPrayer).toFixed(2)}</span>
+            </div>
+            <div className="mt-2 p-3 rounded-xl border border-white/10 flex justify-center gap-3"
+              style={{ background: 'rgba(0,0,0,0.5)' }}>
+              {['Subuh', 'Dzuhur', 'Ashar'].map(p => (
+                <div key={p} className="flex flex-col items-center">
+                  <span style={{ fontSize: `${Number(fsPrayer) * 0.75}rem`, color: prayerColor }}>{p}</span>
+                  <span className="font-mono font-bold text-white"
+                    style={{ fontSize: `${fsPrayer}rem` }}>05:00</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Default: 1.1rem · Range: 0.7–2.5</p>
+          </div>
+          {/* Hadith font size */}
+          <div>
+            <label className="settings-label">Ukuran Teks Hadith (rem)</label>
+            <div className="flex items-center gap-3 mt-1">
+              <input type="range" min="0.6" max="1.8" step="0.05" value={fsHadith}
+                onChange={e => setFsHadith(e.target.value)}
+                className="flex-1 accent-emerald-400" />
+              <span className="text-white text-sm font-mono w-8 text-right">{Number(fsHadith).toFixed(2)}</span>
+            </div>
+            <div className="mt-2 p-3 rounded-xl border border-white/10"
+              style={{ background: 'rgba(0,0,0,0.5)' }}>
+              <p className="text-white leading-relaxed"
+                style={{ fontSize: `${fsHadith}rem` }}>
+                Sholat berjamaah lebih utama daripada sholat sendirian dengan 27 derajat.
+              </p>
+              <p className="text-amber-400 mt-1"
+                style={{ fontSize: `${Number(fsHadith) * 0.85}rem` }}>
+                HR. Bukhari No. 645
+              </p>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Default: 0.95rem · Range: 0.6–1.8</p>
+          </div>
+        </div>
+      </SettingsCard>
+
+      {/* Colors */}
       <SettingsCard>
         <h3 className="text-white font-semibold mb-4">Warna Tampilan</h3>
         <div className="grid grid-cols-2 gap-6">
@@ -911,12 +1000,10 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
               <input value={clockColor} onChange={e => setClockColor(e.target.value)}
                 className="settings-input flex-1" placeholder="#10B981" />
             </div>
-            {/* Preview */}
             <div className="mt-3 p-3 rounded-xl border border-white/10 text-center"
               style={{ background: 'rgba(0,0,0,0.5)' }}>
-              <span className="text-3xl font-mono font-bold" style={{ color: clockColor, textShadow: `0 0 20px ${clockColor}60` }}>
-                12:34:56
-              </span>
+              <span className="text-3xl font-mono font-bold"
+                style={{ color: clockColor, textShadow: `0 0 20px ${clockColor}60` }}>12:34:56</span>
             </div>
           </div>
           <div>
@@ -927,7 +1014,6 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
               <input value={prayerColor} onChange={e => setPrayerColor(e.target.value)}
                 className="settings-input flex-1" placeholder="#F59E0B" />
             </div>
-            {/* Preview */}
             <div className="mt-3 p-3 rounded-xl border border-white/10 flex justify-center gap-4"
               style={{ background: 'rgba(0,0,0,0.5)' }}>
               {['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'].map(p => (

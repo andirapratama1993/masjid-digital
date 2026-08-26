@@ -240,6 +240,17 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
   const currentHadith = getHadith(now, hadithIndex)
   const glow = `0 0 30px ${clockColor}60, 0 0 60px ${clockColor}20`
 
+  // Font sizes from settings (rem values)
+  const fsClockRem = settings.font_size_clock || 7
+  const fsPrayerRem = settings.font_size_prayer || 1.1
+  const fsHadithRem = settings.font_size_hadith || 0.95
+  // Secondary clock elements proportional
+  const fsSecRem = fsClockRem * 0.65
+  const fsClockStyle = { fontSize: `${fsClockRem}rem` }
+  const fsSecStyle = { fontSize: `${fsSecRem}rem` }
+  const fsPrayerStyle = { fontSize: `${fsPrayerRem}rem` }
+  const fsHadithStyle = { fontSize: `${fsHadithRem}rem` }
+
   // Contrast-aware colors
   const textPrimary = (hasImage || !isLight) ? '#ffffff' : '#111827'
   const textSub = (hasImage || !isLight) ? '#d1d5db' : '#6b7280'
@@ -371,7 +382,7 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
   return (
     <div className="flex flex-col h-full animate-fade-in">
       {/* Clock section */}
-      <div className="flex flex-col items-center py-2 sm:py-4 lg:py-5 gap-1 sm:gap-2">
+      <div className="flex flex-col items-center py-2 sm:py-3 lg:py-4 gap-1 sm:gap-1.5">
         {/* Bismillah decoration */}
         <div className="flex items-center gap-2 sm:gap-3 opacity-60 mb-0.5">
           <div className="h-px w-8 sm:w-12 bg-gradient-to-r from-transparent to-emerald-500" />
@@ -382,26 +393,20 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
           <span className="text-emerald-400">✦</span>
           <div className="h-px w-8 sm:w-12 bg-gradient-to-l from-transparent to-emerald-500" />
         </div>
-
         {/* Date Masehi */}
-        <p className="text-xs sm:text-sm lg:text-base tracking-widest" style={{ color: textSub }}>{dateStr}</p>
-
+        <p className="text-xs sm:text-sm tracking-widest" style={{ color: textSub }}>{dateStr}</p>
         {/* Date Hijriyah */}
-        <p className="text-xs sm:text-sm tracking-widest" style={{ color: '#F59E0B', opacity: 0.9 }}>{hijriStr}</p>
-
-        {/* Digital clock */}
-        <div className={`flex items-center gap-1 sm:gap-2 font-mono font-bold
-          text-5xl sm:text-7xl lg:text-8xl xl:text-9xl`}
-          style={{ color: clockColor, textShadow: glow }}>
+        <p className="text-xs sm:text-sm tracking-widest font-medium" style={{ color: '#F59E0B', opacity: 0.9 }}>{hijriStr}</p>
+        {/* Digital clock — uses font_size_clock setting */}
+        <div className="flex items-center gap-1 sm:gap-2 font-mono font-bold"
+          style={{ color: clockColor, textShadow: glow, ...fsClockStyle }}>
           <span className={flipH ? 'digit-flip' : ''}>{h}</span>
           <span className="opacity-70 animate-pulse">:</span>
           <span className={flipM ? 'digit-flip' : ''}>{m}</span>
           <span className="opacity-70 animate-pulse">:</span>
-          <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl"
-            style={{ color: clockColor + 'CC' }}>{s}</span>
+          <span style={{ color: clockColor + 'CC', ...fsSecStyle }}>{s}</span>
         </div>
-
-        {/* Next prayer hint or Friday label */}
+        {/* Next prayer hint */}
         {nextPrayer && (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full mt-0.5"
             style={{ background: `${clockColor}15`, border: `1px solid ${clockColor}40` }}>
@@ -417,7 +422,7 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
 
       {/* 5-minute warning banner */}
       {warningPrayer && prayerTimes && (
-        <div className="mx-3 sm:mx-4 mb-2 px-3 sm:px-4 py-2 rounded-xl border border-amber-400/50 text-center animate-fade-in"
+        <div className="mx-2 sm:mx-4 mb-1 px-3 py-1.5 rounded-xl border border-amber-400/50 text-center animate-fade-in"
           style={{ background: 'rgba(245,158,11,0.15)' }}>
           <p className="text-amber-300 text-xs sm:text-sm font-medium">
             ⚠️ Waktu {getPrayerLabel(warningPrayer, now)} akan segera tiba — {settings.prayer_notification_minutes} menit lagi
@@ -425,13 +430,13 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
         </div>
       )}
 
-      {/* Prayer time table */}
+      {/* Prayer time table — uses font_size_prayer setting */}
       {prayerTimes && (
-        <div className="grid grid-cols-6 gap-1 sm:gap-1.5 lg:gap-2 px-2 sm:px-3 lg:px-4">
-          {([ 
+        <div className="grid grid-cols-6 gap-1 sm:gap-1.5 lg:gap-2 px-2 sm:px-3 lg:px-4 flex-shrink-0">
+          {([
             { key: 'subuh' as keyof PrayerTime, short: 'Sbh' },
             { key: 'syuruk' as keyof PrayerTime, short: 'Syk' },
-            { key: 'dzuhur' as keyof PrayerTime, short: isFriday ? "Jmt" : 'Dzh' },
+            { key: 'dzuhur' as keyof PrayerTime, short: isFriday ? 'Jmt' : 'Dzh' },
             { key: 'ashar' as keyof PrayerTime, short: 'Ash' },
             { key: 'maghrib' as keyof PrayerTime, short: 'Mgr' },
             { key: 'isya' as keyof PrayerTime, short: 'Isy' },
@@ -444,7 +449,7 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
             const fullLabel = getPrayerLabel(key, now)
             return (
               <div key={key}
-                className={`flex flex-col items-center py-2 sm:py-2.5 lg:py-3 px-1 rounded-lg sm:rounded-xl transition-all duration-500
+                className={`flex flex-col items-center py-2 sm:py-2.5 px-1 rounded-lg sm:rounded-xl transition-all duration-500
                   ${status === 'current' ? 'scale-105' : ''}
                   ${status === 'past' ? 'opacity-40' : ''}`}
                 style={{
@@ -454,13 +459,14 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
                   border: `1px solid ${status === 'current' ? prayerColor + '80' : cardBorder}`,
                   boxShadow: status === 'current' ? `0 0 20px ${prayerColor}30` : 'none',
                 }}>
-                <p className="text-xs font-medium tracking-widest mb-0.5 leading-none"
-                  style={{ color: status === 'current' ? prayerColor : textSub }}>
+                <p className="font-medium tracking-widest mb-0.5 leading-none"
+                  style={{ color: status === 'current' ? prayerColor : textSub, fontSize: `${fsPrayerRem * 0.75}rem` }}>
                   <span className="hidden sm:inline">{fullLabel}</span>
                   <span className="sm:hidden">{short.toUpperCase()}</span>
                 </p>
-                <p className="text-xs sm:text-sm lg:text-base xl:text-lg font-mono font-bold leading-none"
+                <p className="font-mono font-bold leading-none"
                   style={{
+                    ...fsPrayerStyle,
                     color: status === 'current' ? '#ffffff' : textPrimary,
                     textShadow: status === 'current' ? `0 0 15px ${prayerColor}` : 'none',
                     opacity: status === 'current' ? 1 : 0.85,
@@ -468,8 +474,8 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
                   {prayerTimes[key]}
                 </p>
                 {status === 'current' && (
-                  <span className="mt-0.5 text-xs px-1 py-0.5 rounded-full animate-pulse hidden sm:inline"
-                    style={{ background: `${prayerColor}30`, color: prayerColor }}>Kini</span>
+                  <span className="mt-0.5 px-1 py-0.5 rounded-full animate-pulse hidden sm:inline"
+                    style={{ background: `${prayerColor}30`, color: prayerColor, fontSize: '0.65rem' }}>Kini</span>
                 )}
               </div>
             )
@@ -477,20 +483,45 @@ export default function PrayerView({ settings, prayerTimes, isLight, hasImage }:
         </div>
       )}
 
-      {/* Hadith section */}
-      <div className="flex-1 flex items-end pb-2 sm:pb-3 px-2 sm:px-4">
-        <div key={hadithIndex} className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border animate-fade-in"
-          style={{ background: cardBg, borderColor: cardBorder }}>
-          <div className="flex items-start gap-2">
-            <span className="text-amber-400 text-sm mt-0.5 flex-shrink-0">
+      {/* Spacer */}
+      <div className="flex-1 min-h-0" />
+
+      {/* Hadith section — centered, spaced, strong contrast, uses font_size_hadith */}
+      <div className="px-3 sm:px-6 pb-3 sm:pb-4">
+        <div key={hadithIndex}
+          className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border-l-4 border-amber-400 animate-fade-in"
+          style={{
+            background: hasImage
+              ? 'rgba(0,0,0,0.65)'
+              : isLight
+                ? 'rgba(0,0,0,0.08)'
+                : 'rgba(255,255,255,0.09)',
+            backdropFilter: 'blur(6px)',
+            borderRight: `1px solid ${isLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)'}`,
+            borderTop: `1px solid ${isLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)'}`,
+            borderBottom: `1px solid ${isLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)'}`,
+          }}>
+          <div className="flex items-start gap-2 sm:gap-3">
+            <span className="text-amber-400 flex-shrink-0 mt-0.5"
+              style={{ fontSize: `${fsHadithRem * 1.2}rem` }}>
               {isFriday ? '🕌' : '📖'}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm leading-relaxed" style={{ color: textPrimary }}>
+              <p className="leading-relaxed font-medium"
+                style={{
+                  ...fsHadithStyle,
+                  color: hasImage ? '#ffffff' : isLight ? '#111827' : '#f3f4f6',
+                  textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
+                }}>
                 {currentHadith.text}
               </p>
-              <p className="text-xs mt-1" style={{ color: prayerColor, opacity: 0.9 }}>
-                {currentHadith.source} · {currentHadith.topic}
+              <p className="mt-1.5 font-semibold tracking-wide"
+                style={{
+                  fontSize: `${fsHadithRem * 0.85}rem`,
+                  color: '#F59E0B',
+                  opacity: 0.95,
+                }}>
+                {currentHadith.source} &nbsp;·&nbsp; {currentHadith.topic}
               </p>
             </div>
           </div>

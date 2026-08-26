@@ -17,14 +17,18 @@ export interface MosqueSettings {
   display_duration: number
   activity_table_duration: number
   activity_detail_duration: number
+  finance_display_duration: number  // seconds to show finance view
   azan_duration: number
   iqomah_duration: number
   prayer_notification_minutes: number
   background_theme: BackgroundTheme
   background_image_url: string
-  hadith_duration: number       // seconds per hadith rotation
-  sound_url: string             // custom notification sound URL
-  straighten_duration: number   // seconds to show "rapatkan shaf" screen
+  hadith_duration: number
+  sound_url: string
+  straighten_duration: number
+  font_size_clock: number     // rem: 4–12
+  font_size_prayer: number    // rem: 1–3
+  font_size_hadith: number    // rem: 0.7–1.5
 }
 
 export interface Activity {
@@ -105,6 +109,7 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
   display_duration: 30,
   activity_table_duration: 20,
   activity_detail_duration: 10,
+  finance_display_duration: 30,
   azan_duration: 180,
   iqomah_duration: 600,
   prayer_notification_minutes: 5,
@@ -113,4 +118,7 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
   hadith_duration: 30,
   sound_url: '',
   straighten_duration: 15,
+  font_size_clock: 7,
+  font_size_prayer: 1.1,
+  font_size_hadith: 0.95,
 }

@@ -16,13 +16,32 @@ interface FinanceData {
 
 interface FinanceViewProps {
   financeData: FinanceData | null
+  isLight?: boolean
 }
 
-export default function FinanceView({ financeData }: FinanceViewProps) {
+export default function FinanceView({ financeData, isLight }: FinanceViewProps) {
+  const t = isLight ? {
+    border: 'rgba(0,0,0,0.08)',
+    title: '#111827',
+    sub: '#6b7280',
+    cardBg: 'rgba(0,0,0,0.04)',
+    rowBg: 'rgba(0,0,0,0.03)',
+    divider: 'rgba(0,0,0,0.08)',
+    amount: '#374151',
+  } : {
+    border: 'rgba(255,255,255,0.10)',
+    title: '#ffffff',
+    sub: '#9ca3af',
+    cardBg: 'rgba(255,255,255,0.04)',
+    rowBg: 'rgba(255,255,255,0.03)',
+    divider: 'rgba(255,255,255,0.10)',
+    amount: '#e5e7eb',
+  }
+
   if (!financeData) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-gray-500">Data keuangan belum tersedia</p>
+        <p style={{ color: t.sub }}>Data keuangan belum tersedia</p>
       </div>
     )
   }
@@ -30,24 +49,26 @@ export default function FinanceView({ financeData }: FinanceViewProps) {
   const { last_updated, current_balance, weekly, monthly, recent_transactions } = financeData
 
   return (
-    <div className="flex flex-col h-full gap-4 px-6 py-4 animate-fade-in">
+    <div className="flex flex-col h-full gap-2 sm:gap-4 px-3 sm:px-6 py-2 sm:py-4 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+      <div className="flex items-center justify-between border-b pb-2 sm:pb-3" style={{ borderColor: t.border }}>
         <div className="flex items-center gap-2">
           <span className="text-emerald-400">◆</span>
-          <span className="text-lg font-semibold text-white">LAPORAN KEUANGAN MASJID</span>
+          <span className="text-sm sm:text-base lg:text-lg font-semibold" style={{ color: t.title }}>
+            LAPORAN KEUANGAN MASJID
+          </span>
         </div>
-        <p className="text-gray-400 text-sm">
+        <p className="text-xs sm:text-sm" style={{ color: t.sub }}>
           Data per: <span className="text-amber-400">{formatDateShort(last_updated)}</span>
         </p>
       </div>
 
       {/* Saldo utama */}
       <div className="flex justify-center">
-        <div className="flex flex-col items-center px-10 py-4 rounded-2xl border border-emerald-500/30"
+        <div className="flex flex-col items-center px-4 sm:px-8 lg:px-10 py-2 sm:py-3 lg:py-4 rounded-xl sm:rounded-2xl border border-emerald-500/30"
           style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))' }}>
-          <p className="text-emerald-400 text-sm tracking-widest mb-1">SALDO KAS MASJID</p>
-          <p className="text-4xl font-bold text-white font-mono"
+          <p className="text-emerald-400 text-xs sm:text-sm tracking-widest mb-1">SALDO KAS MASJID</p>
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold font-mono text-white"
             style={{ textShadow: '0 0 20px rgba(16,185,129,0.5)' }}>
             {formatRupiah(current_balance)}
           </p>
@@ -55,33 +76,33 @@ export default function FinanceView({ financeData }: FinanceViewProps) {
       </div>
 
       {/* Weekly & Monthly Summary */}
-      <div className="grid grid-cols-2 gap-4">
-        <FinancePeriodCard title="MINGGU INI" data={weekly} />
-        <FinancePeriodCard title="BULAN INI" data={monthly} />
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+        <FinancePeriodCard title="MINGGU INI" data={weekly} t={t} />
+        <FinancePeriodCard title="BULAN INI" data={monthly} t={t} />
       </div>
 
       {/* Recent transactions */}
-      <div className="flex-1 overflow-hidden">
-        <p className="text-xs text-gray-500 tracking-widest mb-2">TRANSAKSI TERAKHIR</p>
-        <div className="space-y-1 overflow-auto max-h-40">
-          {recent_transactions.slice(0, 6).map(t => (
-            <div key={t.id}
-              className="flex items-center justify-between px-3 py-2 rounded-lg border border-white/05"
-              style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                  ${t.type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                  {t.type === 'income' ? '+' : '−'}
+      <div className="flex-1 overflow-hidden min-h-0">
+        <p className="text-xs tracking-widest mb-1 sm:mb-2" style={{ color: t.sub }}>TRANSAKSI TERAKHIR</p>
+        <div className="space-y-1 overflow-auto h-full max-h-32 sm:max-h-40 lg:max-h-48">
+          {recent_transactions.slice(0, 6).map(t2 => (
+            <div key={t2.id}
+              className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border"
+              style={{ background: t.rowBg, borderColor: t.border }}>
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <span className={`text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium flex-shrink-0
+                  ${t2.type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {t2.type === 'income' ? '+' : '−'}
                 </span>
-                <span className="text-sm text-gray-200">{t.description}</span>
-                {t.category && <span className="text-xs text-gray-500">({t.category})</span>}
+                <span className="text-xs sm:text-sm truncate" style={{ color: t.amount }}>{t2.description}</span>
+                {t2.category && <span className="text-xs hidden sm:inline" style={{ color: t.sub }}>({t2.category})</span>}
               </div>
-              <div className="flex items-center gap-3">
-                <span className={`font-mono text-sm font-medium
-                  ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {t.type === 'income' ? '+' : '−'}{formatRupiah(t.amount)}
+              <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0 ml-2">
+                <span className={`font-mono text-xs sm:text-sm font-medium
+                  ${t2.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {t2.type === 'income' ? '+' : '−'}{formatRupiah(t2.amount)}
                 </span>
-                <span className="text-xs text-gray-500">{formatDateShort(t.transaction_date)}</span>
+                <span className="text-xs hidden sm:inline" style={{ color: t.sub }}>{formatDateShort(t2.transaction_date)}</span>
               </div>
             </div>
           ))}
@@ -91,35 +112,36 @@ export default function FinanceView({ financeData }: FinanceViewProps) {
   )
 }
 
-// =============================================
-// Sub-component: Period Card (weekly/monthly)
-// =============================================
-function FinancePeriodCard({ title, data }: {
+function FinancePeriodCard({ title, data, t }: {
   title: string
   data: { income: number; expense: number; net: number }
+  t: { cardBg: string; border: string; sub: string; title: string; divider: string }
 }) {
   const isPositive = data.net >= 0
   return (
-    <div className="rounded-xl border border-white/10 p-4"
-      style={{ background: 'rgba(255,255,255,0.04)' }}>
-      <p className="text-xs text-gray-400 tracking-widest mb-3">{title}</p>
-      <div className="space-y-2">
+    <div className="rounded-lg sm:rounded-xl border p-2 sm:p-3 lg:p-4" style={{ background: t.cardBg, borderColor: t.border }}>
+      <p className="text-xs tracking-widest mb-2" style={{ color: t.sub }}>{title}</p>
+      <div className="space-y-1.5 sm:space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-400 flex items-center gap-1">
-            <span className="text-emerald-400">↑</span> Pemasukan
+          <span className="text-xs sm:text-sm flex items-center gap-1" style={{ color: t.sub }}>
+            <span className="text-emerald-400">↑</span>
+            <span className="hidden sm:inline">Pemasukan</span>
+            <span className="sm:hidden">Masuk</span>
           </span>
-          <span className="font-mono text-sm text-emerald-400">{formatRupiah(data.income)}</span>
+          <span className="font-mono text-xs sm:text-sm text-emerald-400">{formatRupiah(data.income)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-400 flex items-center gap-1">
-            <span className="text-red-400">↓</span> Pengeluaran
+          <span className="text-xs sm:text-sm flex items-center gap-1" style={{ color: t.sub }}>
+            <span className="text-red-400">↓</span>
+            <span className="hidden sm:inline">Pengeluaran</span>
+            <span className="sm:hidden">Keluar</span>
           </span>
-          <span className="font-mono text-sm text-red-400">{formatRupiah(data.expense)}</span>
+          <span className="font-mono text-xs sm:text-sm text-red-400">{formatRupiah(data.expense)}</span>
         </div>
-        <div className="h-px bg-white/10 my-1" />
+        <div className="h-px my-1" style={{ background: t.divider }} />
         <div className="flex justify-between items-center">
-          <span className="text-sm text-white font-medium">Selisih</span>
-          <span className={`font-mono text-sm font-bold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className="text-xs sm:text-sm font-medium" style={{ color: t.title }}>Selisih</span>
+          <span className={`font-mono text-xs sm:text-sm font-bold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
             {isPositive ? '+' : ''}{formatRupiah(data.net)}
           </span>
         </div>

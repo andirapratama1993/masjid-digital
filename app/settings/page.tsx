@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { MosqueSettings, Activity, Finance, FinanceSummary, DEFAULT_SETTINGS } from '@/lib/types'
+import { MosqueSettings, Activity, Finance, FinanceSummary, DEFAULT_SETTINGS, BackgroundTheme } from '@/lib/types'
 import { DAY_NAMES } from '@/lib/types'
 import { formatRupiah, formatDateShort } from '@/lib/utils'
 import { INDONESIAN_CITIES } from '@/lib/prayer-times'
@@ -11,7 +11,7 @@ import Image from 'next/image'
 // =============================================
 // Settings Tabs
 // =============================================
-type Tab = 'general' | 'prayer' | 'activities' | 'finances' | 'display'
+type Tab = 'general' | 'prayer' | 'activities' | 'finances' | 'display' | 'background'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'general',    label: 'Umum',       icon: '⚙️' },
@@ -19,6 +19,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'activities', label: 'Kegiatan',   icon: '📅' },
   { id: 'finances',   label: 'Keuangan',   icon: '💰' },
   { id: 'display',    label: 'Tampilan',   icon: '🖥️' },
+  { id: 'background', label: 'Background', icon: '🖼️' },
 ]
 
 export default function SettingsPage() {
@@ -175,6 +176,9 @@ export default function SettingsPage() {
           )}
           {activeTab === 'display' && (
             <DisplayTab settings={settings} onSave={saveSettings} saving={saving} />
+          )}
+          {activeTab === 'background' && (
+            <BackgroundTab settings={settings} onSave={saveSettings} saving={saving} />
           )}
         </main>
       </div>
@@ -873,6 +877,97 @@ function DisplayTab({ settings, onSave, saving }: { settings: MosqueSettings; on
         </div>
         <div className="mt-5">
           <SaveButton onClick={handleSave} saving={saving} />
+        </div>
+      </SettingsCard>
+    </div>
+  )
+}
+
+// =============================================
+// Background Tab
+// =============================================
+const BG_OPTIONS: { id: BackgroundTheme; label: string; desc: string; preview: string }[] = [
+  { id: 'dark',           label: 'Hitam',          desc: 'Latar polos gelap',           preview: '#0a0a0a' },
+  { id: 'light',          label: 'Putih',           desc: 'Latar polos terang',          preview: '#f8f9fa' },
+  { id: 'masjidil-haram', label: 'Masjidil Haram',  desc: 'Masjid Haram, Makkah',        preview: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&q=60' },
+  { id: 'masjid-nabawi',  label: 'Masjid Nabawi',   desc: 'Masjid Nabawi, Madinah',      preview: 'https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=400&q=60' },
+  { id: 'masjidil-aqsa',  label: "Masjidil Aqsa",   desc: "Masjid Al-Aqsa, Palestina",   preview: 'https://images.unsplash.com/photo-1552083375-1447ce886485?w=400&q=60' },
+]
+
+function BackgroundTab({ settings, onSave, saving }: { settings: MosqueSettings; onSave: (u: Partial<MosqueSettings>) => void; saving: boolean }) {
+  const [selected, setSelected] = useState<BackgroundTheme>(settings.background_theme || 'dark')
+
+  useEffect(() => { setSelected(settings.background_theme || 'dark') }, [settings])
+
+  function handleSave() { onSave({ background_theme: selected }) }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <SectionTitle icon="🖼️" title="Background Tampilan" desc="Pilih latar belakang papan informasi" />
+      <SettingsCard>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {BG_OPTIONS.map(opt => {
+            const isColor = opt.id === 'dark' || opt.id === 'light'
+            const isSelected = selected === opt.id
+            return (
+              <button key={opt.id} onClick={() => setSelected(opt.id)}
+                className={`relative rounded-xl overflow-hidden border-2 transition-all duration-200 text-left
+                  ${isSelected ? 'border-emerald-400 scale-105' : 'border-white/10 hover:border-white/30'}`}
+                style={{ boxShadow: isSelected ? '0 0 20px rgba(16,185,129,0.4)' : 'none' }}>
+                {/* Preview */}
+                <div className="relative h-24 sm:h-28 lg:h-32 overflow-hidden"
+                  style={isColor ? { background: opt.preview } : undefined}>
+                  {!isColor && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={opt.preview} alt={opt.label}
+                      className="w-full h-full object-cover"
+                      loading="lazy" />
+                  )}
+                  {/* Overlay for image themes */}
+                  {!isColor && <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />}
+                  {/* Selected checkmark */}
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-emerald-400 flex items-center justify-center">
+                      <span className="text-black text-xs font-bold">✓</span>
+                    </div>
+                  )}
+                  {/* Label overlay for images */}
+                  {!isColor && (
+                    <div className="absolute bottom-0 left-0 right-0 px-2 pb-1">
+                      <p className="text-white font-semibold text-xs drop-shadow">{opt.label}</p>
+                    </div>
+                  )}
+                </div>
+                {/* Caption */}
+                <div className="px-3 py-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <p className="text-xs font-semibold text-white">{opt.label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        <div className="mt-5 flex items-center gap-4">
+          <SaveButton onClick={handleSave} saving={saving} label="Terapkan Background" />
+          <p className="text-xs text-gray-500">
+            Background saat ini: <span className="text-emerald-400">{BG_OPTIONS.find(o => o.id === selected)?.label}</span>
+          </p>
+        </div>
+      </SettingsCard>
+
+      {/* Preview note */}
+      <SettingsCard>
+        <div className="flex items-start gap-3">
+          <span className="text-amber-400 text-xl mt-0.5">💡</span>
+          <div>
+            <p className="text-white text-sm font-medium">Catatan Penggunaan Background Gambar</p>
+            <ul className="text-gray-500 text-xs mt-2 space-y-1 list-disc list-inside">
+              <li>Background gambar menggunakan foto dari Unsplash (membutuhkan koneksi internet)</li>
+              <li>Overlay gelap otomatis ditambahkan agar teks tetap terbaca</li>
+              <li>Background putih cocok untuk ruangan yang terang</li>
+              <li>Background hitam cocok untuk tampilan malam / layar TV</li>
+            </ul>
+          </div>
         </div>
       </SettingsCard>
     </div>

@@ -2,6 +2,13 @@
 // Global TypeScript Types
 // =============================================
 
+export type BackgroundTheme =
+  | 'dark'         // polos hitam
+  | 'light'        // polos putih
+  | 'masjidil-haram'
+  | 'masjid-nabawi'
+  | 'masjidil-aqsa'
+
 export interface MosqueSettings {
   mosque_name: string
   mosque_logo_url: string
@@ -15,6 +22,7 @@ export interface MosqueSettings {
   azan_duration: number           // seconds to show azan notification
   iqomah_duration: number         // seconds for iqomah countdown
   prayer_notification_minutes: number // minutes before prayer to notify
+  background_theme: BackgroundTheme
 }
 
 export interface Activity {
@@ -98,4 +106,5 @@ export const DEFAULT_SETTINGS: MosqueSettings = {
   azan_duration: 180,
   iqomah_duration: 600,
   prayer_notification_minutes: 5,
+  background_theme: 'dark',
 }

@@ -107,6 +107,7 @@ export function parseSettingsFromDB(rows: { key: string; value: string | null }[
     azan_duration: Number(map.azan_duration ?? DEFAULT_SETTINGS.azan_duration),
     iqomah_duration: Number(map.iqomah_duration ?? DEFAULT_SETTINGS.iqomah_duration),
     prayer_notification_minutes: Number(map.prayer_notification_minutes ?? DEFAULT_SETTINGS.prayer_notification_minutes),
+    background_theme: (map.background_theme as import('./types').BackgroundTheme) ?? DEFAULT_SETTINGS.background_theme,
   }
 }
 

@@ -201,6 +201,37 @@ export default function SimulatePage() {
       <div className="border-t border-white/10 px-6 py-4"
         style={{ background: 'rgba(10,10,10,0.98)' }}>
         <div className="max-w-4xl mx-auto">
+          {/* FULL PRAYER MODE — complete sequence */}
+          <div className="mb-4 p-4 rounded-xl border border-emerald-500/40"
+            style={{ background: 'rgba(16,185,129,0.08)' }}>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-white text-sm font-semibold">🕌 Simulasi Prayer Mode Lengkap</p>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  Jalankan urutan penuh: 10 dtk countdown → Azan berkumandang → Iqomah → Luruskan Shaf
+                </p>
+                <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                  {['10s Countdown','→','Azan (maks 15s)','→','Iqomah (maks 30s)','→','Luruskan Shaf','→','Selesai'].map((step, i) => (
+                    <span key={i} className="text-xs"
+                      style={{ color: step === '→' ? '#4b5563' : i === 0 ? '#EF4444' : i === 2 ? '#10B981' : i === 4 ? '#F59E0B' : i === 6 ? '#10B981' : '#9ca3af' }}>
+                      {step}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => runPhase('countdown')}
+                disabled={running}
+                className="flex-shrink-0 px-5 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: running ? 'rgba(16,185,129,0.3)' : 'linear-gradient(135deg, #10B981, #059669)',
+                  boxShadow: running ? 'none' : '0 0 20px rgba(16,185,129,0.4)',
+                }}>
+                {running ? '⏳ Berjalan...' : '▶ Mulai'}
+              </button>
+            </div>
+          </div>
+
           {/* Prayer selector */}
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs text-gray-500 whitespace-nowrap">Sholat:</span>
